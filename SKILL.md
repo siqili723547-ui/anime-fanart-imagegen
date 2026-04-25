@@ -23,6 +23,31 @@ Default to a two-stage workflow: build a reference pack, lock the character iden
 
 Read `references/reference-sourcing.md` before you search. Read `references/prompt-recipes.md` before you draft prompts. Read `references/quality-standards.md` before choosing a resolution profile.
 
+## Zero-Friction Default
+
+If the user only gives a character name, do not ask for a full prompt up front. Use this default behavior:
+
+- infer the series from official or high-confidence sources
+- search for official-priority references
+- default to the anime/game version that is easiest to verify
+- build a character anchor list
+- create a lock prompt first
+- generate one `poster-2k` fan poster unless the user asked for a scene, square image, or 4K
+
+Only ask a clarifying question if the character name is genuinely ambiguous across multiple works or versions.
+
+Example user input:
+
+```text
+$anime-fanart-imagegen Anna Yanami
+```
+
+Default interpretation:
+
+```text
+Create a 2K anime fan poster for Anna Yanami from Too Many Losing Heroines!, using official-priority references, preserving recognizability, and avoiding copied reference composition.
+```
+
 ## Decision Path
 
 ### Use the built-in `image_gen` tool when
