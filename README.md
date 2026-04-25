@@ -180,6 +180,6 @@ Constraints: preserve recognizability, canonical school uniform, no text, no wat
 
 ## 注意事项
 
-不要把有版权的参考图、动画截图、生成图或私有 API key 提交到这个仓库。建议把本地参考图放在 `refs/`，生成结果放在 `output/`；这两个目录已经被 `.gitignore` 忽略。
-
-这个 skill 可以通过参考图和提示词结构提高人物相似度，但不能保证 100% 复刻某个版权角色或某一帧画面。
+- 请只在你有权使用参考图和生成结果的场景下使用。
+- 不要在公开内容里泄露自己的 `OPENAI_API_KEY`。
+- 这个 skill 会尽量提高人物相似度，但不能保证 100% 复刻某个角色或某一帧画面。
