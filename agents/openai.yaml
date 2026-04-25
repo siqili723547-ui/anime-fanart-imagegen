@@ -1,0 +1,4 @@
+interface:
+  display_name: "Anime Fanart"
+  short_description: "Anime fanart with character identity locking"
+  default_prompt: "Use $anime-fanart-imagegen to find official-priority reference images, lock the character identity, and generate a high-quality anime fan poster or scene from a Chinese request."

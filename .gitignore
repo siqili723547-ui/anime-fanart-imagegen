@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+
+# Local reference packs and generated outputs should not be published.
+refs/
+output/
+generated_images/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
