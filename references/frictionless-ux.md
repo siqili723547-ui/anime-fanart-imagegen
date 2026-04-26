@@ -13,11 +13,12 @@ The user should not need to know prompt engineering vocabulary. Convert rough ta
 Prefer this order:
 
 1. infer what can be inferred
-2. route by user intent
-3. recommend one default path
-4. offer micro-chips or discovery probes only if needed
-5. prepare the final prompt
-6. render only after the user asks to generate, selects a direction, or has already provided a complete prompt
+2. gate explicit poster or cover generation requests with a direct-vs-guided confirmation
+3. route by user intent
+4. recommend one default path
+5. offer micro-chips or discovery probes only if needed
+6. prepare the final prompt
+7. render only after the user chooses direct generation, asks to generate after guidance, selects a direction, or has already provided a complete prompt
 
 Do not start with a long list of questions.
 
@@ -29,6 +30,41 @@ Ask only when one of these is genuinely blocking:
 - the version is ambiguous and changes the design materially
 - the requested deliverable is incompatible with the default crop
 - the user supplied contradictory references
+
+## Direct Poster Request Gate
+
+Use this gate when the user directly asks to generate a poster, cover,
+wallpaper, or key visual in the first turn or as a new task, for example:
+
+```text
+生成有史诗感的蕾姆海报
+```
+
+```text
+帮我做一张 Saber 封面图
+```
+
+Default behavior:
+
+- do not call the image tool yet
+- briefly restate the interpreted character, source, and requested deliverable
+- ask one two-choice workflow question:
+
+```text
+我理解你要做 <character/source + requested poster direction>。
+你想 A. 直接按当前要求生成一版，还是 B. 先基于当前要求引导并整理提示词再生成？
+```
+
+Route the answer:
+
+- `A`, `直接生成`, `按这个生成`, `现在出图`, or equivalent -> infer missing slots conservatively and render
+- `B`, `引导`, `完善提示词`, `先整理 prompt`, or equivalent -> continue with the guided prompt workflow
+
+If the original request already says "不要问", "无需引导", "直接生成",
+"马上出图", or equivalent, treat that as workflow `A` and render without
+asking this gate question. If the character identity or source is ambiguous,
+combine the identity clarification with the same single question instead of
+asking multiple questions.
 
 ## Guided-First Rule
 

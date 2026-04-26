@@ -36,6 +36,22 @@ Load references only when needed:
 
 ## First-Turn Routing
 
+If the first turn or a new task explicitly asks to generate a poster, cover,
+wallpaper, or key visual, but does not choose a workflow, do not render yet.
+Ask one confirmation question before using any image tool:
+
+```text
+我理解你要做 <character/source + requested poster direction>。
+你想 A. 直接按当前要求生成一版，还是 B. 先基于当前要求引导并整理提示词再生成？
+```
+
+If the user chooses `A`, says "直接生成", "按这个生成", "现在出图", or
+equivalent, infer missing slots conservatively and generate. If the user
+chooses `B`, says "引导", "完善提示词", "先整理 prompt", or equivalent,
+continue with the guided prompt workflow. If the user already says "不要问",
+"无需引导", "直接生成", or equivalent in the same request, treat that as
+workflow `A`.
+
 If the user only gives a character name or says something like "我要生成 X 图片", do not generate immediately.
 
 First show a compact guide:

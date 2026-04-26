@@ -145,6 +145,18 @@ Expected checkpoints:
 
 ## Interaction Model / 交互模型
 
+If a user directly asks to generate a poster, cover, wallpaper, or key visual,
+the skill first asks whether to generate directly from the current brief or to
+guide and organize the prompt before generation.
+
+如果用户直接要求生成海报、封面、壁纸或 key visual，skill 会先询问是直接按当前要求生成，
+还是先基于当前要求引导并整理提示词后再生成。
+
+```text
+我理解你要做 <角色/作品 + 海报方向>。
+你想 A. 直接按当前要求生成一版，还是 B. 先基于当前要求引导并整理提示词再生成？
+```
+
 For vague requests, the skill starts with broad intent instead of technical controls.
 
 面对模糊请求时，skill 会先询问用户目标，而不是直接暴露复杂参数。
