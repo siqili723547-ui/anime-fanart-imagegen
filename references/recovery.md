@@ -27,6 +27,18 @@ Use this file when the result looks technically good but the character no longer
 - Keep the character large in frame.
 - Reduce the number of props and background events.
 
+## Variants all look the same
+
+- Change the scene archetype or crop before changing synonyms in `Lighting/mood`.
+- Keep the identity anchors fixed and vary one of: finish, lighting, or composition.
+- Use `references/style-matrix.md` and pick combinations from different archetype families.
+
+## Stylization drift
+
+- Reassert the canonical source visual baseline in `Style/medium`.
+- Step down from bold reinterpretation to lightly stylized.
+- Remove overlapping style phrases until only one finish term and one lighting term remain.
+
 ## Final image no longer matches the lock image
 
 - Use the lock image as the first input image.

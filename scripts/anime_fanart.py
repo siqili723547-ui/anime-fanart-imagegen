@@ -33,6 +33,11 @@ MAX_REFERENCE_IMAGES = 16
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
 ALLOWED_QUALITIES = {"low", "medium", "high", "auto"}
 ALLOWED_OUTPUT_FORMATS = {"png", "jpeg", "jpg", "webp"}
+DEFAULT_FINAL_CONSTRAINTS = (
+    "preserve character identity and recognizability; preserve the canonical outfit "
+    "silhouette unless the user explicitly asked for a new outfit; original composition; "
+    "no watermark"
+)
 
 
 @dataclass(frozen=True)
@@ -48,8 +53,10 @@ PROFILES: Dict[str, Profile] = {
     "poster-2k": Profile("poster-2k", "1440x2560", "high", "png"),
     "scene-2k": Profile("scene-2k", "2560x1440", "high", "png"),
     "square-2k": Profile("square-2k", "1920x1920", "high", "png"),
+    "banner-2k": Profile("banner-2k", "3072x1024", "high", "png"),
     "poster-4k": Profile("poster-4k", "2160x3840", "high", "png"),
     "scene-4k": Profile("scene-4k", "3840x2160", "high", "png"),
+    "banner-4k": Profile("banner-4k", "3840x1280", "high", "png"),
 }
 
 
@@ -192,7 +199,7 @@ def _lock_prompt(character: str, series: str, identity_notes: Optional[str]) -> 
     return (
         f"Use case: character-lock\n"
         f"Primary request: create a clean identity-lock image for {character}{series_line}\n"
-        f"Style/medium: polished anime character art matching the anime adaptation\n"
+        f"Style/medium: polished character art matching the canonical source visuals in the reference pack\n"
         f"Composition/framing: simple centered portrait or full-body neutral standing pose, plain or lightly graded background{notes}\n"
         f"Constraints: preserve recognizability; keep the canonical outfit silhouette; do not copy any single reference composition; no text; no watermark\n"
         f"Avoid: busy scenery, dramatic perspective distortion, face drift, random costume changes, anatomy errors"
@@ -202,11 +209,13 @@ def _lock_prompt(character: str, series: str, identity_notes: Optional[str]) -> 
 def _final_prompt(base_prompt: str, character: str, series: str, identity_notes: Optional[str]) -> str:
     identity_line = f"Identity anchors: {identity_notes}\n" if identity_notes else ""
     series_line = f" from {series}" if series else ""
+    prompt_body = base_prompt.strip()
+    if not re.search(r"(?im)^constraints\s*:", prompt_body):
+        prompt_body = f"{prompt_body}\nConstraints: {DEFAULT_FINAL_CONSTRAINTS}"
     return (
         f"Character: {character}{series_line}\n"
         f"{identity_line}"
-        f"{base_prompt.strip()}\n"
-        f"Constraints: preserve character identity and recognizability; preserve the canonical outfit silhouette unless the user explicitly asked for a new outfit; original composition; no watermark"
+        f"{prompt_body}"
     )
 
 

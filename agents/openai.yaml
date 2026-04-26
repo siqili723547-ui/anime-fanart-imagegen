@@ -1,4 +1,4 @@
 interface:
   display_name: "Anime Fanart"
-  short_description: "Anime fanart with character identity locking"
-  default_prompt: "Use $anime-fanart-imagegen to find official-priority reference images, lock the character identity, and generate a high-quality anime fan poster or scene from a Chinese request."
+  short_description: "Turn vague Chinese ideas into identity-locked anime fanart"
+  default_prompt: "Use $anime-fanart-imagegen to turn a rough Chinese idea into a strong image-2 workflow. For vague first-turn requests, infer the character and baseline, route by user intent, recommend one path, show quick tweak chips, and provide an image-2-ready English prompt before rendering. If the user is still unsure, run an iterative discovery loop: branch into diverse probes, capture natural-language reactions, maintain preference state, narrow the direction, then generate after selection or approval while preserving character recognizability."

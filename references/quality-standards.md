@@ -10,13 +10,15 @@ Use these named profiles instead of inventing a size each time.
 | `poster-2k` | `1440x2560` | `high` | `png` | default vertical poster |
 | `scene-2k` | `2560x1440` | `high` | `png` | default horizontal scene |
 | `square-2k` | `1920x1920` | `high` | `png` | default square render |
+| `banner-2k` | `3072x1024` | `high` | `png` | extra-wide header, cover, or panoramic key visual |
 | `poster-4k` | `2160x3840` | `high` | `png` | explicit 4K vertical poster |
 | `scene-4k` | `3840x2160` | `high` | `png` | explicit 4K horizontal scene |
+| `banner-4k` | `3840x1280` | `high` | `png` | explicit 4K panoramic banner |
 
 ## Why these defaults exist
 
-- `poster-2k`, `scene-2k`, and `square-2k` stay below the current OpenAI guide's experimental threshold for outputs larger than `2560x1440` total pixels.
-- `poster-4k` and `scene-4k` are valid but should be opt-in only.
+- `poster-2k`, `scene-2k`, `square-2k`, and `banner-2k` give stable default deliverables for common poster, scene, square, and cover-art use cases.
+- `poster-4k`, `scene-4k`, and `banner-4k` are valid but should be opt-in only.
 
 ## Size constraints for `gpt-image-2`
 
