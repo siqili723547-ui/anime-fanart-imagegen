@@ -1,43 +1,43 @@
 # Prompt Modules
 
-Use this file when finalizing a prompt after exploration or when the user wants to change only part of an existing direction.
+Use this file when finalizing a prompt after exploration, when the user asks to generate after several choices, or when the user wants to change only part of an existing direction.
 
-When talking to a Chinese-speaking user, show module names and edit instructions in Chinese. Keep the compiled generation prompt in English.
+When talking to a Chinese-speaking user, show module names, edit instructions, and next actions in Chinese. Keep the compiled generation prompt in English.
 
 ## Principle
 
-Separate decision state from the final prose prompt.
+Separate decision state from final prompt prose.
 
 The final English prompt is compiled from modules. The user should be able to change one module without redoing the whole discovery flow.
 
 ## Required Modules
 
-Use these stable labels internally. For Chinese users, show the Chinese display names.
+Use these stable labels. For Chinese users, show the Chinese label first and keep the module ID visible.
 
 ```text
-M1 Identity / 身份锚点
-M2 Canon Baseline / 原作基线
-M3 Intent / Use Case / 用途目标
-M4 Reinterpretation Boundary / 改编边界
-M5 Emotional Direction / 情绪方向
-M6 Character Agency / 角色状态
-M7 Picture Content / 画面内容
-M8 Composition / Crop / 构图画幅
-M9 Light / Color / 光线色彩
-M10 Finish / Style / 风格质感
-M11 Constraints / 正向约束
-M12 Avoid / 避免项
+M1 身份锚点 / Identity
+M2 原作基线 / Canon Baseline
+M3 用途目标 / Intent and Use Case
+M4 改编边界 / Reinterpretation Boundary
+M5 情绪方向 / Emotional Direction
+M6 角色状态 / Character Agency
+M7 画面内容 / Picture Content
+M8 构图画幅 / Composition and Crop
+M9 光线色彩 / Light and Color
+M10 风格质感 / Finish and Style
+M11 正向约束 / Constraints
+M12 避免项 / Avoid
 ```
 
-For faithful outputs, `M4 Reinterpretation Boundary` can be `canon-close`.
+For faithful outputs, `M4` can be `接近原作 / canon-close`.
 
 For AU outputs, `M4` must explicitly state what may change and what must remain recognizable.
 
 ## Module Meanings
 
-### M1 Identity
+### M1 身份锚点
 
-Character name, series, and identity anchors.
+Character name, series, and recognition anchors.
 
 Examples:
 
@@ -46,7 +46,7 @@ Examples:
 - signature prop or accessory
 - non-negotiable recognition cues
 
-### M2 Canon Baseline
+### M2 原作基线
 
 The source visual logic that prevents style drift.
 
@@ -57,7 +57,7 @@ Examples:
 - visual novel illustration baseline
 - manga-colorized baseline
 
-### M3 Intent / Use Case
+### M3 用途目标
 
 What the image is for.
 
@@ -70,51 +70,51 @@ Examples:
 - banner
 - mood exploration
 
-### M4 Reinterpretation Boundary
+### M4 改编边界
 
 How far the image can move from canon.
 
 Examples:
 
-- canon-close
-- lightly stylized
-- strong AU
-- outfit redesign allowed
-- setting can change, identity anchors must stay fixed
+- 接近原作
+- 轻度风格化
+- 强 AU
+- 允许服装重设计
+- 场景可变，身份锚点必须固定
 
-### M5 Emotional Direction
+### M5 情绪方向
 
 The primary emotional target.
 
 Examples:
 
-- quiet and restrained
-- melancholic but hopeful
-- dreamlike and symbolic
-- dramatic and heroic
-- warm and nostalgic
+- 克制安静
+- 忧郁但有希望
+- 梦幻象征
+- 戏剧化英雄感
+- 温暖怀旧
 
-### M6 Character Agency
+### M6 角色状态
 
 What the character is doing at an abstract level.
 
 Examples:
 
-- still and observing
-- arriving
-- leaving
-- protecting
-- repairing
-- crossing through
-- presenting herself
+- 静止观察
+- 正在抵达
+- 正在离开
+- 正在保护
+- 正在修复
+- 正在穿行
+- 正在展示自己
 
-### M7 Picture Content
+### M7 画面内容
 
 Concrete scene, setting, props, and symbolic motifs.
 
-This module should stay empty or abstract until the user has reached the picture-content phase.
+Keep this module empty or abstract until the user reaches the picture-content phase.
 
-### M8 Composition / Crop
+### M8 构图画幅
 
 Framing and visual hierarchy.
 
@@ -130,20 +130,20 @@ Examples:
 - square avatar
 - panoramic banner
 
-### M9 Light / Color
+### M9 光线色彩
 
 Lighting and palette.
 
 Examples:
 
-- dawn gold and pale blue
-- silver-gray and cold white
-- dark blue with muted gold
-- rose dusk
-- white and pale gold
-- broken prismatic memory fragments
+- 黎明金色和浅蓝
+- 银灰和冷白
+- 深蓝和暗金
+- 玫瑰色黄昏
+- 纯白和淡金
+- 破碎棱镜记忆光
 
-### M10 Finish / Style
+### M10 风格质感
 
 Rendering finish and medium.
 
@@ -155,7 +155,7 @@ Examples:
 - clean character render
 - fashion editorial finish
 
-### M11 Constraints
+### M11 正向约束
 
 Positive requirements.
 
@@ -167,7 +167,7 @@ Examples:
 - no watermark
 - original composition
 
-### M12 Avoid
+### M12 避免项
 
 Likely failure modes to avoid.
 
@@ -183,35 +183,35 @@ Examples:
 
 ## Output Format
 
-When finalizing for Chinese users, show this:
+When finalizing for Chinese users, show this shape:
 
 ```text
-提示词模块：
-M1 身份锚点：...
-M2 原作基线：...
-M3 用途目标：...
-M4 改编边界：...
-M5 情绪方向：...
-M6 角色状态：...
-M7 画面内容：...
-M8 构图画幅：...
-M9 光线色彩：...
-M10 风格质感：...
-M11 正向约束：...
-M12 避免项：...
+提示词模块:
+M1 身份锚点: ...
+M2 原作基线: ...
+M3 用途目标: ...
+M4 改编边界: ...
+M5 情绪方向: ...
+M6 角色状态: ...
+M7 画面内容: ...
+M8 构图画幅: ...
+M9 光线色彩: ...
+M10 风格质感: ...
+M11 正向约束: ...
+M12 避免项: ...
 
-英文生成提示词：
+英文生成提示词:
 <English prompt>
 
-下一步你可以：
-- 生成：直接使用当前英文提示词
-- 改模块：例如「改 M9 光线色彩」「换 M7 画面内容」「M4 更接近原作」
-- 再探索某模块：例如「再探索 M9」「继续探索 M7」「M8 多给几个」
-- 探索更多维度：例如「探索更多维度」「还有哪些维度可以调」
-- 返回：回到上一层选择
+下一步你可以:
+- 生成: 直接使用当前英文提示词
+- 改模块: 例如"改 M9 光线色彩"、"换 M7 画面内容"、"M4 更接近原作"
+- 再探索某个模块: 例如"再探索 M9"、"继续探索 M7"、"M8 多给几个"
+- 探索更多维度: 例如"探索更多维度"、"还有哪些维度可以调"
+- 返回: 回到上一层选择
 ```
 
-For English-speaking users, use the English labels from the required module list.
+For English-speaking users, use the English labels from the module list.
 
 ## Compilation Rules
 
@@ -261,16 +261,16 @@ Rules:
 Chinese response shape:
 
 ```text
-保持其他模块不变，只再探索 M9 光线色彩：
+保持其他模块不变，只再探索 M9 光线色彩:
 
 A. <option>: <what changes and what it feels like>
 B. <option>: ...
 C. <option>: ...
 
-下一步：回 A-C，也可以混合如「A+C」「A 但更像 C」，或说「继续探索 M9」「返回」「可以了」。
+下一步: 回 A-C，也可以混合如"A+C"、"A 但更像 C"，或说"继续探索 M9"、"返回"、"可以了"。
 ```
 
-If the user says "继续探索 M9", stay within M9 and offer a new set that avoids repeating the previous options.
+If the user says "继续探索 M9", stay within M9 and offer a new set that avoids repeating previous options.
 
 ## More-Dimensions Exploration
 
@@ -295,16 +295,16 @@ Behavior:
 Chinese response shape:
 
 ```text
-当前提示词不变。还可以继续探索这些维度：
+当前提示词不变。还可以继续探索这些维度:
 
-A. 情绪强度：更克制 / 更强烈 / 更治愈 / 更孤独
-B. 画面密度：极简 / 适中 / 丰富 / 史诗
-C. 符号比例：更写实 / 更多意象 / 更抽象
-D. 角色距离：脸更近 / 半身 / 全身 / 环境更大
-E. 服装自由度：接近原作 / 轻改 / 完全 AU
-F. 镜头语言：静态 / 行进中 / 俯视 / 仰视 / 电影海报
+A. 情绪强度: 更克制 / 更强烈 / 更治愈 / 更孤独
+B. 画面密度: 极简 / 适中 / 丰富 / 史诗
+C. 符号比例: 更写实 / 更多意象 / 更抽象
+D. 角色距离: 脸更近 / 半身 / 全身 / 环境更大
+E. 服装自由度: 接近原作 / 轻改 / 完全 AU
+F. 镜头语言: 静态 / 行进中 / 俯视 / 仰视 / 电影海报
 
-下一步：回 A-F，也可以混合如「A+C」「A 但更像 C」，或说「再探索 M9」「生成」「返回」。
+下一步: 回 A-F，也可以混合如"A+C"、"A 但更像 C"，或说"再探索 M9"、"生成"、"返回"。
 ```
 
 If the user selects one, continue exploring only that dimension and note which module it affects.
@@ -328,13 +328,13 @@ After every modular prompt spec, always show a short interaction prompt. Do not 
 Chinese default:
 
 ```text
-你现在可以继续精修，不需要重写整段提示词：
-- 想直接出图：回「生成」
-- 想改某一块：回「改 M9 光线色彩」「换 M7 画面内容」
-- 想只在某一块里继续找方向：回「再探索 M9」「继续探索 M6」
-- 想混合两个选项：回「A+C」「A 但更像 C」
-- 想看看还有哪些可调方向：回「探索更多维度」
-- 想退回上一步：回「返回」
+你现在可以继续精修，不需要重写整段提示词:
+- 想直接出图: 回"生成"
+- 想改某一块: 回"改 M9 光线色彩"、"换 M7 画面内容"
+- 想只在某一块里继续找方向: 回"再探索 M9"、"继续探索 M6"
+- 想混合两个选项: 回"A+C"、"A 但更像 C"
+- 想看看还有哪些可调方向: 回"探索更多维度"
+- 想退回上一步: 回"返回"
 ```
 
 Keep this prompt short. It should appear after the compiled English prompt, not before it.
@@ -455,20 +455,20 @@ Chinese response shape:
 ```text
 已整合这次选择，当前版本如下。
 
-提示词模块：
-M1 身份锚点：...
+提示词模块:
+M1 身份锚点: ...
 ...
-M12 避免项：...
+M12 避免项: ...
 
-英文生成提示词：
+英文生成提示词:
 <English prompt>
 
-你现在可以继续精修，不需要重写整段提示词：
-- 想直接出图：回「生成」
-- 想改某一块：回「改 M9 光线色彩」「换 M7 画面内容」
-- 想只在某一块里继续找方向：回「再探索 M9」「继续探索 M6」
-- 想看看还有哪些可调方向：回「探索更多维度」
-- 想退回上一步：回「返回」
+你现在可以继续精修，不需要重写整段提示词:
+- 想直接出图: 回"生成"
+- 想改某一块: 回"改 M9 光线色彩"、"换 M7 画面内容"
+- 想只在某一块里继续找方向: 回"再探索 M9"、"继续探索 M6"
+- 想看看还有哪些可调方向: 回"探索更多维度"
+- 想退回上一步: 回"返回"
 ```
 
 Examples:
@@ -489,7 +489,7 @@ Version B
 Keep module diffs compact:
 
 ```text
-已修改：
-M9 光线色彩：黎明金蓝 -> 银灰冷白
-M6 角色状态：正在抵达 -> 正在保护
+已修改:
+M9 光线色彩: 从明金蓝 -> 银灰冷白
+M6 角色状态: 正在抵达 -> 正在保护
 ```

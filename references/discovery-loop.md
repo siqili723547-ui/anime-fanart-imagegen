@@ -6,16 +6,9 @@ Use this file when the user is not ready to choose a final prompt. The goal is t
 
 Treat every suggestion as a probe. A probe is a small, meaningful direction the user can react to.
 
-Do not ask the user to name technical parameters unless they already use that language. Instead, show semantically different possibilities and learn from their reactions.
+Do not ask the user to name technical parameters unless they already use that language. Show semantically different possibilities and learn from reactions.
 
-Do not lock concrete picture content too early. In early discovery, avoid naming specific locations, props, poses, or story beats unless the user already supplied them. First discover the user's abstract preference, then translate it into concrete image candidates later.
-
-## Source-Informed Heuristics
-
-- Prompt expansion: short prompts often need interpretation, embellishment, and structure before generation.
-- Reference control: style and structure references can carry taste better than text when the user has an image in mind.
-- Branching support: diverse prompt suggestions help users overcome uncertainty and express intent.
-- Mixed-initiative refinement: alternate between agent suggestions and user reactions instead of forcing the user to author the whole prompt.
+Do not lock concrete picture content too early. In early discovery, avoid exact locations, props, poses, weather, and story beats unless the user supplied them. First discover the user's abstract preference, then translate it into concrete image candidates.
 
 ## State To Maintain
 
@@ -70,11 +63,11 @@ I am treating this as: <character/source>, with <identity anchors>, and the curr
 
 ### 2. Probe Abstract Preference First
 
-Offer `3-5` abstract probes. Make them semantically far apart, but do not bind them to exact picture content yet.
+Offer `3-6` abstract probes. Make them semantically different, but do not bind them to exact picture content yet.
 
 Good probe axes:
 
-- purpose: shareable finished image, wallpaper, avatar, reference sheet, mood exploration
+- purpose: finished image, wallpaper, avatar, reference sheet, mood exploration
 - emotional direction: calm, warm, lonely, dramatic, playful, mysterious, premium
 - crop: face, half-body, full-body, wide environment
 - style strength: canon-close, lightly stylized, bold reinterpretation
@@ -89,16 +82,7 @@ Avoid early specifics:
 - exact weather or time of day
 - exact story beats
 
-Use these only after the user has picked an abstract direction or supplied the content themselves.
-
-Bad probes:
-
-- three variants that are all vertical posters
-- synonym swaps such as "cinematic", "beautiful", "premium" without composition changes
-- choices that change identity anchors before the user asks for reinterpretation
-- choices that pre-decide the picture content while the user is still exploring taste
-
-### 2b. Translate To Picture Content Later
+### 3. Translate To Picture Content Later
 
 After the user picks an abstract probe, offer `2-4` picture-content candidates that fit that preference.
 
@@ -114,32 +98,32 @@ At this stage, concrete content is useful:
 
 Keep one candidate conservative, one emotionally stronger, and one more surprising.
 
-### 3. Capture
+### 4. Capture
 
 Ask for a low-effort reaction.
 
 ```text
-Reply with one: A/B/C/D, "A+C", "A but more like C", "mix B+C", "explore more", "back", "none", or any mood word.
+下一步: 回 A-F，可混合如"A+C"或"A 但更像 C"，也可以说"再探索"、"返回"、"可以了"或"生成"。
 ```
 
-If the user has entered exploration mode, do not end exploration just because they picked an option. Treat each pick as a new locked preference and continue exploring inside it until the user explicitly says they are done.
+If the user has entered active exploration mode, do not end exploration just because they picked an option. Treat each pick as a new locked preference and continue exploring inside it until the user explicitly says they are done.
 
-### 4. Narrow
+### 5. Narrow
 
-After a reaction, narrow instead of expanding again.
+After a reaction, narrow instead of expanding everything again.
 
-Use this decision rule:
+Decision rule:
 
 - if the user chooses one abstract probe -> offer picture-content candidates or ask permission to choose one
 - if the user likes two probes -> merge only one feature from the second into the first
-- if the user combines options, keep the first option as the base unless they say otherwise, then borrow only the named trait from the second option
+- if the user combines options -> keep the first option as the base unless they say otherwise
 - if the user says none -> change the probe axis, not all axes
-- if the user says explore more -> stay at the same decision level and offer new alternatives that avoid repeating prior probes
-- if the user says back -> return one decision level up and preserve learned likes/dislikes
+- if the user says "再探索" -> stay at the same decision level and offer new alternatives that avoid repeating prior probes
+- if the user says "返回" -> return one decision level up and preserve learned likes/dislikes
 - if the user gives a mood word -> map it to emotional direction first; defer pose and scene content until the picture-content phase
 - if the user asks for surprise -> pick the strongest route and explain in one sentence
 
-Do not auto-commit after narrowing during active exploration. A narrowed choice becomes the new current branch, then offer the next useful exploration dimension.
+Do not auto-commit after narrowing during active exploration. A narrowed choice becomes the current branch, then offer the next useful exploration dimension.
 
 Commit only when the user says one of:
 
@@ -152,17 +136,9 @@ Commit only when the user says one of:
 - "stop exploring"
 - "use this"
 
-### 5. Commit
+### 6. Commit
 
 Before generation, show the selected direction in one short sentence, then produce a modular prompt spec and the compiled final prompt.
-
-Do not ask another broad question at this point. The next action should be:
-
-```text
-Reply "generate", "explore more", "back", or give one correction.
-```
-
-Always keep `explore more` available until the image is generated. The user should never feel trapped by the latest recommendation.
 
 Use `prompt-modules.md` for finalization after exploration. The compiled prompt should be derived from modules, not written as an unstructured one-off paragraph.
 
@@ -177,7 +153,7 @@ In active exploration mode:
 - do not produce a final prompt by default
 - do not ask "is this okay?" after every choice
 - treat each selected option as a preference update
-- keep the current branch fixed unless the user says `back`
+- keep the current branch fixed unless the user says `返回`
 - explore one new dimension per turn
 - stop only when the user explicitly approves, asks to generate, or asks to stop
 
@@ -190,17 +166,15 @@ Rotate exploration dimensions to avoid repetition:
 5. canon closeness versus reinterpretation
 6. detail density
 7. color temperature
-8. character agency: passive, observing, acting, arriving, leaving
+8. character agency
 
 After each turn, end with:
 
 ```text
-Reply A-F, combine like "A+C" or "A 但更像 C", "explore more", "back", or "可以了".
+下一步: 回 A-F，可混合如"A+C"或"A 但更像 C"，也可以说"再探索"、"返回"、"可以了"或"生成"。
 ```
 
 ## Exploration Modes
-
-Use one of these modes depending on the user's uncertainty.
 
 ### Fast Track
 
@@ -264,7 +238,7 @@ Use when the user explicitly asks for more options, says "再探索", or seems u
 - avoid repeating previous options
 - change the probe axis if the last set felt too narrow
 - offer `3-5` new alternatives
-- include `back` and `generate` as exits when relevant
+- include `返回` and `生成` as exits when relevant
 
 Examples:
 
@@ -282,7 +256,7 @@ A. <name>: <purpose>, <emotional direction>, <character distance>, <style streng
 B. <name>: ...
 C. <name>: ...
 
-Reply A/B/C, "mix A+C", "none", or one mood word.
+下一步: 回 A-C，可混合如"A+C"，也可以说"再探索"、"返回"、"可以了"。
 ```
 
 Do not include specific picture content in early probe cards.
@@ -305,22 +279,22 @@ Do not blindly merge every detail from both options. A clean hybrid is better th
 Use this after the user chooses an abstract preference:
 
 ```text
-Direction locked: <abstract preference>.
+已锁定方向: <abstract preference>.
 
-Now choose picture content:
-A. Conservative: <specific but safe image idea>
-B. Stronger emotion: <specific image idea with more mood>
-C. More surprising: <specific image idea with more novelty>
+现在选择画面内容:
+A. 保守稳妥: <specific but safe image idea>
+B. 情绪更强: <specific image idea with more mood>
+C. 更出乎意料: <specific image idea with more novelty>
 
-Reply A/B/C, "mix A+C", "explore more", "back", or "you choose".
+下一步: 回 A-C，可混合如"A+C"，也可以说"再探索"、"返回"或"你选"。
 ```
 
 ## Finalization Template
 
 ```text
-Selected direction: <one sentence>.
+已选方向: <one sentence>.
 
-Prompt modules:
+提示词模块:
 M1 身份锚点: ...
 M2 原作基线: ...
 M3 用途目标: ...
@@ -334,13 +308,13 @@ M10 风格质感: ...
 M11 正向约束: ...
 M12 避免项: ...
 
-English prompt:
+英文生成提示词:
 <image-2-ready English prompt>
 
-Next:
+下一步:
 - 生成
-- 改某一模块，例如 "改 M9 光线色彩"
-- 再探索某一模块，例如 "再探索 M7"
+- 改某一模块，例如"改 M9 光线色彩"
+- 再探索某一模块，例如"再探索 M7"
 - 探索更多维度
 - 返回
 ```
@@ -349,16 +323,16 @@ Next:
 
 Every discovery response should include at least two of these exits, and finalization responses should include all three:
 
-- `generate`: commit to the current prompt
-- `explore more`: stay at this level and show different alternatives
-- `back`: return to the previous level
+- `生成`: commit to the current prompt
+- `再探索`: stay at this level and show different alternatives
+- `返回`: return to the previous level
 
 Do not hide these exits in prose. Put them in the final next-action line.
 
-If the user asks to explore a specific module, the next-action line should stay module-scoped, for example:
+If the user asks to explore a specific module, the next-action line should stay module-scoped:
 
 ```text
-Next: reply A-C, mix like "A+C", "继续探索 M9", "返回", or "可以了".
+下一步: 回 A-C，可混合如"A+C"，也可以说"继续探索 M9"、"返回"或"可以了"。
 ```
 
 If the user asks to explore more dimensions after a modular prompt spec, use `prompt-modules.md` More-Dimensions Exploration and keep the current prompt unchanged until they select a dimension.
@@ -371,5 +345,5 @@ If the user asks to explore more dimensions after a modular prompt spec, use `pr
 - Preserve identity anchors across probes unless the user asks for reinterpretation.
 - When unsure, vary purpose, emotional direction, character distance, and style strength before choosing exact picture content.
 - Do not turn early taste discovery into a list of specific scene ideas.
-- Always offer an escape from the current branch: explore more, back, or generate.
+- Always offer an escape from the current branch: 再探索, 返回, or 生成.
 - Keep user agency visible: recommendations are defaults, not hidden decisions.
