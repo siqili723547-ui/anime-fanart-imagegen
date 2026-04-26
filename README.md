@@ -284,14 +284,3 @@ This repository is meant to be portable. To vendor it into another repository, c
 Keep the folder name `anime-fanart-imagegen` when possible so skill references remain predictable.
 
 建议尽量保留目录名 `anime-fanart-imagegen`，这样 skill 引用更稳定。
-
-## Notes / 注意事项
-
-- Use reference images to keep the character recognizable, not to copy the exact composition.
-- 参考图用于帮助角色保持可辨识度，不用于复刻原图构图。
-- Avoid requests that require exact reproduction of copyrighted screenshots, frames, or poster layouts.
-- 避免要求精确复刻受版权保护的截图、分镜或海报版式。
-- If the user provides reference images, follow those images as the main visual direction.
-- 如果用户提供参考图，应优先按照这些参考图确定角色版本和视觉方向。
-- Keep API keys and private files out of the repository.
-- 不要把 API key 或私人文件提交到仓库。
