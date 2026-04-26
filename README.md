@@ -287,11 +287,11 @@ Keep the folder name `anime-fanart-imagegen` when possible so skill references r
 
 ## Notes / 注意事项
 
-- Preserve identity anchors instead of copying a reference composition.
-- 保留角色身份锚点，而不是复制参考图构图。
-- Do not promise exact reproduction of copyrighted frames or layouts.
-- 不承诺精确复刻受版权保护的画面、分镜或版式。
-- Treat user-provided references as the highest-priority version definition.
-- 用户提供的参考图优先级最高，应作为角色版本定义。
-- Do not commit `OPENAI_API_KEY` or generated metadata containing secrets.
-- 不要提交 `OPENAI_API_KEY`，也不要提交包含密钥的生成元数据。
+- Use reference images to keep the character recognizable, not to copy the exact composition.
+- 参考图用于帮助角色保持可辨识度，不用于复刻原图构图。
+- Avoid requests that require exact reproduction of copyrighted screenshots, frames, or poster layouts.
+- 避免要求精确复刻受版权保护的截图、分镜或海报版式。
+- If the user provides reference images, follow those images as the main visual direction.
+- 如果用户提供参考图，应优先按照这些参考图确定角色版本和视觉方向。
+- Keep API keys and private files out of the repository.
+- 不要把 API key 或私人文件提交到仓库。
