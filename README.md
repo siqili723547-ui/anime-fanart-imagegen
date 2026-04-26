@@ -68,7 +68,7 @@ This skill turns that into a guided flow.
 7. 编译最终英文 `gpt-image-2` prompt。
 8. 直接生成，或使用锁脸优先的脚本流程获得更稳定的角色相似度。
 
-## Quick Start / 快速开始
+## Installation / 安装
 
 Install as a Codex skill.
 
@@ -90,17 +90,58 @@ Restart Codex after installation.
 
 安装后重启 Codex。
 
-Use the skill.
+## Out-of-the-box Tutorial / 开箱即用教程
 
-使用方式：
+Use this after installation. It is a first-run smoke test for the guided workflow, not a replacement for the reference sections below.
+
+完成安装后使用这一段。它是第一次运行的冒烟测试，不替代后面的交互模型和模块说明。
+
+No local reference images or `OPENAI_API_KEY` are required for this guided prompt test.
+
+这个引导式 prompt 测试不需要本地参考图，也不需要 `OPENAI_API_KEY`。
+
+### Copy-paste flow / 复制流程
+
+Send these messages in Codex one by one.
+
+在 Codex 里逐条发送：
 
 ```text
 $anime-fanart-imagegen Asuka
 ```
 
-The skill should not ask for a complete prompt. It should infer what it can, show a compact intent router, recommend a path, and provide a ready English prompt or continue exploration.
+```text
+DF
+```
 
-skill 不应该要求用户先写完整 prompt。它应该先推断可推断的信息，给出紧凑的意图路由，推荐一个方向，并提供可用英文 prompt 或继续探索。
+```text
+再探索
+```
+
+```text
+A+C
+```
+
+```text
+可以了
+```
+
+```text
+生成
+```
+
+Expected checkpoints:
+
+预期检查点：
+
+- After the character name, the skill should show a compact intent router instead of asking for a full prompt.
+- 输入角色名后，skill 应该给出简洁意图路由，而不是要求用户写完整 prompt。
+- After `DF`, it should explore vibe and style together.
+- 输入 `DF` 后，它应该同时探索氛围和风格。
+- After `再探索`, it should stay in the current branch and offer new alternatives.
+- 输入 `再探索` 后，它应该留在当前分支下给出新方向。
+- After `可以了`, it should output editable modules plus a compiled English prompt.
+- 输入 `可以了` 后，它应该输出可编辑模块和编译好的英文 prompt。
 
 ## Interaction Model / 交互模型
 
