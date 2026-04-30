@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference-driven anime fanart workflow for GPT Image 2.
+"""Reference-driven anime fanart workflow for OpenAI image models.
 
 This CLI is intended for identity-sensitive fanart where the user wants a known
 character to stay recognizable across prompt iterations.
@@ -20,7 +20,7 @@ import sys
 import time
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-DEFAULT_MODEL = "gpt-image-2-2026-04-21"
+DEFAULT_MODEL = os.getenv("ANIME_FANART_MODEL", "gpt-image-2.0")
 DEFAULT_OUTPUT_FORMAT = "png"
 DEFAULT_MODERATION = "auto"
 LOCK_PROFILE = "square-safe"
@@ -85,7 +85,7 @@ def _profile_help() -> str:
 
 
 SIZE_HELP = (
-    "Optional custom size: auto or WIDTHxHEIGHT. For gpt-image-2, both edges "
+    "Optional custom size: auto or WIDTHxHEIGHT. For gpt-image-2.0, both edges "
     "must be multiples of 16, longest edge <= 3840, ratio <= 3:1, and total "
     "pixels between 655,360 and 8,294,400."
 )
@@ -639,7 +639,14 @@ def _add_shared_args(parser: argparse.ArgumentParser, *, require_prompt: bool) -
     parser.add_argument("--quality")
     parser.add_argument("--output-format")
     parser.add_argument("--output-compression", type=int)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=(
+            "Image model to use (matches the workflow defaults; override with --model "
+            f"or ANIME_FANART_MODEL env var)."
+        ),
+    )
     parser.add_argument("--moderation", default=DEFAULT_MODERATION)
     parser.add_argument("--out", required=True)
     parser.add_argument("--dry-run", action="store_true")
@@ -649,7 +656,7 @@ def _add_shared_args(parser: argparse.ArgumentParser, *, require_prompt: bool) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Reference-driven anime fanart generation with GPT Image 2"
+        description="Reference-driven anime fanart generation with OpenAI image models"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

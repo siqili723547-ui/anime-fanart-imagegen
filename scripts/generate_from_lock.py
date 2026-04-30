@@ -87,7 +87,14 @@ def main() -> int:
     parser.add_argument("--quality")
     parser.add_argument("--output-format")
     parser.add_argument("--output-compression", type=int)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=(
+            "Image model to use (matches the workflow defaults; override with --model "
+            "or ANIME_FANART_MODEL env var)."
+        ),
+    )
     parser.add_argument("--moderation", default=DEFAULT_MODERATION)
     parser.add_argument("--out", required=True)
     parser.add_argument("--dry-run", action="store_true")

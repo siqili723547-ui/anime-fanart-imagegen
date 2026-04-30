@@ -28,16 +28,24 @@ For this skill, image generation should not jump to completion too early.
 ## Install
 
 ```bash
-git clone <repo-url> ~/.codex/skills/anime-fanart-imagegen
+git clone https://github.com/siqili723547-ui/anime-fanart-imagegen ~/.codex/skills/anime-fanart-imagegen
 ```
 
 On Windows PowerShell:
 
 ```powershell
-git clone <repo-url> "$env:USERPROFILE\.codex\skills\anime-fanart-imagegen"
+git clone https://github.com/siqili723547-ui/anime-fanart-imagegen "$env:USERPROFILE\.codex\skills\anime-fanart-imagegen"
 ```
 
 Restart Codex after installation.
+
+Preferred install (recommended):
+
+```bash
+npx skills add https://github.com/siqili723547-ui/anime-fanart-imagegen -g
+```
+
+If `npx skills find anime-fanart-imagegen` still cannot find it, use the direct clone command above and restart Codex manually. `skills find` depends on the public skill index; direct GitHub URL installation is the supported path for this repository until that index includes the skill.
 
 ## Quick Start (Codex)
 
@@ -135,6 +143,8 @@ Windows PowerShell:
 ```powershell
 $env:OPENAI_API_KEY = "..."
 ```
+
+This repository defaults local scripts to `gpt-image-2.0`. Override it with `--model` only when your local environment requires a different image model name.
 
 ## CLI Commands
 
@@ -248,7 +258,7 @@ Legacy aliases:
 
 To request true 2K/4K, pass explicit `--size` (must satisfy model constraints).
 
-## Size Constraints (gpt-image-2)
+## Size Constraints (gpt-image-2.0)
 
 - both edges must be multiples of 16
 - longest edge `<= 3840`
