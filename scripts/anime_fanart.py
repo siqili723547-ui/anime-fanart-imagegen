@@ -23,20 +23,29 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 DEFAULT_MODEL = "gpt-image-2-2026-04-21"
 DEFAULT_OUTPUT_FORMAT = "png"
 DEFAULT_MODERATION = "auto"
-LOCK_PROFILE = "square-2k"
+LOCK_PROFILE = "square-safe"
 MIN_PIXELS = 655_360
 MAX_PIXELS = 8_294_400
 MAX_EDGE = 3840
 MAX_RATIO = 3.0
-NON_EXPERIMENTAL_PIXEL_THRESHOLD = 2560 * 1440
+EXPERIMENTAL_PIXEL_THRESHOLD = 2560 * 1440
 MAX_REFERENCE_IMAGES = 16
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
 ALLOWED_QUALITIES = {"low", "medium", "high", "auto"}
 ALLOWED_OUTPUT_FORMATS = {"png", "jpeg", "jpg", "webp"}
 DEFAULT_FINAL_CONSTRAINTS = (
-    "preserve character identity and recognizability; preserve the canonical outfit "
-    "silhouette unless the user explicitly asked for a new outfit; original composition; "
-    "no watermark"
+    "preserve character identity and recognizability; use supplied reference images "
+    "for identity and canonical cues only; preserve the canonical face, hair, eye, "
+    "outfit, and color cues; preserve the canonical outfit silhouette unless the "
+    "user explicitly asked for a new outfit; original composition; no watermark"
+)
+LOCK_IMAGE_IDENTITY_ONLY_CONSTRAINT = (
+    "Lock image usage: when an accepted lock image is supplied, use it only as an "
+    "identity reference for face, hair, eyes, makeup, outfit silhouette, color "
+    "hierarchy, and signature cues; do not copy its pose, crop, lighting, "
+    "background, rendering finish, body emphasis, or composition. The written "
+    "prompt controls the final pose, crop, camera angle, scene, lighting, mood, "
+    "background, and finish."
 )
 
 
@@ -50,14 +59,36 @@ class Profile:
 
 PROFILES: Dict[str, Profile] = {
     "preview": Profile("preview", "1024x1024", "medium", "png"),
-    "poster-2k": Profile("poster-2k", "1440x2560", "high", "png"),
-    "scene-2k": Profile("scene-2k", "2560x1440", "high", "png"),
-    "square-2k": Profile("square-2k", "1920x1920", "high", "png"),
-    "banner-2k": Profile("banner-2k", "3072x1024", "high", "png"),
-    "poster-4k": Profile("poster-4k", "2160x3840", "high", "png"),
-    "scene-4k": Profile("scene-4k", "3840x2160", "high", "png"),
-    "banner-4k": Profile("banner-4k", "3840x1280", "high", "png"),
+    "poster-safe": Profile("poster-safe", "1024x1536", "high", "png"),
+    "scene-safe": Profile("scene-safe", "1536x1024", "high", "png"),
+    "square-safe": Profile("square-safe", "1024x1024", "high", "png"),
+    "banner-safe": Profile("banner-safe", "1536x1024", "high", "png"),
 }
+
+LEGACY_PROFILE_ALIASES = {
+    "poster-2k": "poster-safe",
+    "scene-2k": "scene-safe",
+    "square-2k": "square-safe",
+    "banner-2k": "banner-safe",
+}
+
+
+def _profile_help() -> str:
+    profiles = ", ".join(sorted(PROFILES))
+    aliases = ", ".join(sorted(LEGACY_PROFILE_ALIASES))
+    return (
+        f"Named profile. Safe profiles: {profiles}. "
+        f"Legacy aliases: {aliases}. "
+        "For true 2K or 4K delivery, keep a safe profile and pass --size, "
+        "for example 2048x2048, 2048x1152, 3840x2160, or 2160x3840."
+    )
+
+
+SIZE_HELP = (
+    "Optional custom size: auto or WIDTHxHEIGHT. For gpt-image-2, both edges "
+    "must be multiples of 16, longest edge <= 3840, ratio <= 3:1, and total "
+    "pixels between 655,360 and 8,294,400."
+)
 
 
 def _die(message: str, code: int = 1) -> None:
@@ -105,12 +136,16 @@ def _validate_quality(value: str) -> None:
 def _parse_size(size: str) -> Tuple[int, int]:
     match = re.fullmatch(r"(\d+)x(\d+)", size.strip().lower())
     if not match:
-        _die("size must look like WIDTHxHEIGHT, for example 1440x2560.")
+        _die("size must be auto or WIDTHxHEIGHT, for example 2048x2048.")
     return int(match.group(1)), int(match.group(2))
 
 
-def _validate_size(size: str) -> None:
-    width, height = _parse_size(size)
+def _validate_size(size: str) -> str:
+    normalized = size.strip().lower()
+    if normalized == "auto":
+        return normalized
+
+    width, height = _parse_size(normalized)
     if width % 16 != 0 or height % 16 != 0:
         _die("width and height must both be multiples of 16.")
     if max(width, height) > MAX_EDGE:
@@ -123,24 +158,41 @@ def _validate_size(size: str) -> None:
         _die(
             f"total pixels must be between {MIN_PIXELS:,} and {MAX_PIXELS:,}."
         )
+    return f"{width}x{height}"
+
+
+def _resolve_profile_name(profile_name: str) -> str:
+    if profile_name in PROFILES:
+        return profile_name
+    if profile_name in LEGACY_PROFILE_ALIASES:
+        replacement = LEGACY_PROFILE_ALIASES[profile_name]
+        _warn(
+            f"profile {profile_name!r} is deprecated and maps to {replacement!r}; "
+            "use an explicit --size for true 2K or 4K delivery."
+        )
+        return replacement
+    choices = ", ".join(sorted(PROFILES))
+    aliases = ", ".join(sorted(LEGACY_PROFILE_ALIASES))
+    _die(
+        f"unknown profile {profile_name!r}. Choose one of: {choices}. "
+        f"Legacy aliases: {aliases}."
+    )
 
 
 def _profile_for_args(profile_name: str, size_override: Optional[str], quality_override: Optional[str], output_format_override: Optional[str]) -> Dict[str, str]:
-    if profile_name not in PROFILES:
-        choices = ", ".join(sorted(PROFILES))
-        _die(f"unknown profile {profile_name!r}. Choose one of: {choices}")
-    profile = PROFILES[profile_name]
-    size = size_override or profile.size
+    resolved_profile_name = _resolve_profile_name(profile_name)
+    profile = PROFILES[resolved_profile_name]
+    size = _validate_size(size_override or profile.size)
     quality = quality_override or profile.quality
     output_format = _normalize_output_format(output_format_override or profile.output_format)
-    _validate_size(size)
     _validate_quality(quality)
-    pixels = _parse_size(size)[0] * _parse_size(size)[1]
-    if pixels > NON_EXPERIMENTAL_PIXEL_THRESHOLD:
-        _warn(
-            "this size is above the current non-experimental pixel threshold in the "
-            "OpenAI image generation guide."
-        )
+    if size != "auto":
+        pixels = _parse_size(size)[0] * _parse_size(size)[1]
+        if pixels > EXPERIMENTAL_PIXEL_THRESHOLD:
+            _warn(
+                "this size is above the current non-experimental pixel threshold "
+                "in the OpenAI image generation guide."
+            )
     return {
         "profile": profile.name,
         "size": size,
@@ -193,6 +245,47 @@ def _read_prompt(prompt: Optional[str], prompt_file: Optional[str]) -> str:
     return text
 
 
+def _normalize_identity(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _prompt_character_lines(prompt_body: str) -> List[str]:
+    return [
+        match.group(1).strip()
+        for match in re.finditer(r"(?im)^\s*character\s*:\s*(.+)$", prompt_body)
+    ]
+
+
+def _matches_requested_identity(line: str, character: str, series: str) -> bool:
+    normalized_line = _normalize_identity(line)
+    normalized_character = _normalize_identity(character)
+    normalized_series = _normalize_identity(series)
+    if normalized_character and normalized_character not in normalized_line:
+        return False
+    if normalized_series and re.search(r"\bfrom\b", line, flags=re.IGNORECASE):
+        return normalized_series in normalized_line
+    return True
+
+
+def _check_prompt_identity(prompt_body: str, character: str, series: str) -> None:
+    character_lines = _prompt_character_lines(prompt_body)
+    if not character_lines:
+        return
+
+    conflicts = [
+        line
+        for line in character_lines
+        if not _matches_requested_identity(line, character, series)
+    ]
+    if conflicts:
+        requested = f"{character} from {series}" if series else character
+        _die(
+            "prompt identity conflicts with --character/--series: "
+            f"prompt says {conflicts[0]!r}, but CLI says {requested!r}. "
+            "Use a matching --prompt-file or update --character/--series."
+        )
+
+
 def _lock_prompt(character: str, series: str, identity_notes: Optional[str]) -> str:
     series_line = f" from {series}" if series else ""
     notes = f"\nIdentity anchors: {identity_notes}" if identity_notes else ""
@@ -201,22 +294,35 @@ def _lock_prompt(character: str, series: str, identity_notes: Optional[str]) -> 
         f"Primary request: create a clean identity-lock image for {character}{series_line}\n"
         f"Style/medium: polished character art matching the canonical source visuals in the reference pack\n"
         f"Composition/framing: simple centered portrait or full-body neutral standing pose, plain or lightly graded background{notes}\n"
-        f"Constraints: preserve recognizability; keep the canonical outfit silhouette; do not copy any single reference composition; no text; no watermark\n"
+        f"Constraints: preserve recognizability before style; match the supplied face, hair, eye, outfit, and color references; keep the canonical outfit silhouette; do not copy any single reference composition; no text; no watermark\n"
         f"Avoid: busy scenery, dramatic perspective distortion, face drift, random costume changes, anatomy errors"
     )
 
 
-def _final_prompt(base_prompt: str, character: str, series: str, identity_notes: Optional[str]) -> str:
+def _final_prompt(
+    base_prompt: str,
+    character: str,
+    series: str,
+    identity_notes: Optional[str],
+    use_lock_image: bool = False,
+) -> str:
     identity_line = f"Identity anchors: {identity_notes}\n" if identity_notes else ""
     series_line = f" from {series}" if series else ""
     prompt_body = base_prompt.strip()
+    _check_prompt_identity(prompt_body, character, series)
+    if use_lock_image and "Lock image usage:" not in prompt_body:
+        prompt_body = f"{LOCK_IMAGE_IDENTITY_ONLY_CONSTRAINT}\n{prompt_body}"
     if not re.search(r"(?im)^constraints\s*:", prompt_body):
         prompt_body = f"{prompt_body}\nConstraints: {DEFAULT_FINAL_CONSTRAINTS}"
-    return (
-        f"Character: {character}{series_line}\n"
-        f"{identity_line}"
-        f"{prompt_body}"
-    )
+    prefix: List[str] = []
+    if not _prompt_character_lines(prompt_body):
+        prefix.append(f"Character: {character}{series_line}")
+    if identity_notes and not re.search(r"(?im)^identity anchors\s*:", prompt_body):
+        prefix.append(identity_line.rstrip())
+    if prefix:
+        prefix_text = "\n".join(prefix)
+        return f"{prefix_text}\n{prompt_body}"
+    return prompt_body
 
 
 def _open_binary_files(paths: Sequence[Path]) -> ExitStack:
@@ -320,6 +426,7 @@ def _call_image_edit(
         payload["image"] = [str(path) for path in image_paths]
         return {"dry_run": True, "payload": payload}
 
+    _ensure_api_key(dry_run)
     client = _create_client()
     with _open_binary_files(image_paths) as stack:
         request = dict(payload)
@@ -428,13 +535,14 @@ def _cmd_generate(args: argparse.Namespace) -> int:
     refs = _reference_paths(args.image)
     profile = _profile_for_args(args.profile, args.size, args.quality, args.output_format)
     output_path = _resolve_output_path(args.out, profile["output_format"])
+    lock_image = Path(args.lock_image) if args.lock_image else None
     prompt = _final_prompt(
         _read_prompt(args.prompt, args.prompt_file),
         args.character,
         args.series or "",
         args.identity_notes,
+        use_lock_image=bool(lock_image),
     )
-    lock_image = Path(args.lock_image) if args.lock_image else None
     if lock_image:
         if not lock_image.exists():
             _die(f"lock image not found: {lock_image}")
@@ -494,6 +602,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
         args.character,
         args.series or "",
         args.identity_notes,
+        use_lock_image=True,
     )
     final_refs = [lock_out, *refs]
     return _execute_generation(
@@ -525,8 +634,8 @@ def _add_shared_args(parser: argparse.ArgumentParser, *, require_prompt: bool) -
     if require_prompt:
         parser.add_argument("--prompt")
         parser.add_argument("--prompt-file")
-    parser.add_argument("--profile", default="poster-2k")
-    parser.add_argument("--size")
+    parser.add_argument("--profile", default="poster-safe", help=_profile_help())
+    parser.add_argument("--size", help=SIZE_HELP)
     parser.add_argument("--quality")
     parser.add_argument("--output-format")
     parser.add_argument("--output-compression", type=int)
@@ -555,12 +664,11 @@ def main() -> int:
 
     run_parser = subparsers.add_parser("run", help="Run lock and final generation in sequence")
     _add_shared_args(run_parser, require_prompt=True)
-    run_parser.add_argument("--lock-profile", default=LOCK_PROFILE)
+    run_parser.add_argument("--lock-profile", default=LOCK_PROFILE, help=_profile_help())
     run_parser.add_argument("--lock-out", required=True)
     run_parser.set_defaults(func=_cmd_run)
 
     args = parser.parse_args()
-    _ensure_api_key(args.dry_run)
     if args.max_attempts < 1 or args.max_attempts > 10:
         _die("--max-attempts must be between 1 and 10.")
     return int(args.func(args))

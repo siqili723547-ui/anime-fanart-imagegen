@@ -35,10 +35,12 @@ This skill turns that into a guided flow.
 - 从角色名或模糊想法开始。
 - Infer the source, version, and identity anchors.
 - 推断角色来源、版本和身份锚点。
-- Route the user by intent instead of technical prompt terms.
-- 用用户意图做路由，而不是要求用户理解提示词术语。
-- Allow option mixing such as `A+C`, `DF`, or `B but closer to F`.
-- 支持 `A+C`、`DF`、`B 但更像 F` 这类混合选择。
+- Put exploration first, so users can choose directions instead of writing prompts.
+- 把探索放在第一位，让用户先选方向，而不是自己写 prompt。
+- Keep the default exploration path going for at least 10 rounds before proactively suggesting image generation.
+- 默认探索路径至少推进 10 轮后，才主动提示用户可以开始生成图片。
+- Allow option mixing such as `A+C`, `AF`, or `B but closer to F`.
+- 支持 `A+C`、`AF`、`B 但更像 F` 这类混合选择。
 - Keep exploring inside the current branch until the user approves.
 - 在当前选择分支下继续探索，直到用户确认。
 - Finalize as editable modules before generation.
@@ -51,22 +53,36 @@ This skill turns that into a guided flow.
 1. Identify the character and source.
 2. Gather or use official-priority references.
 3. Extract identity anchors: hair, eyes, outfit silhouette, colors, accessories, and source visual baseline.
-4. Guide the user with low-friction choices when the request is vague.
-5. Explore mood, style, crop, and picture content without changing identity anchors.
-6. Produce a modular prompt spec.
-7. Compile the final English `gpt-image-2` prompt.
-8. Generate directly, or run the lock-first script workflow for stricter likeness.
+4. Put exploration first with low-friction direction choices when the request is vague.
+5. Explore progressively for at least 10 default-path rounds before proactively offering generation.
+6. Explore mood, style, crop, and picture content without changing identity anchors.
+7. For real existing-character outputs, create or reuse an accepted identity-lock baseline before final generation.
+8. After the baseline is accepted, resume guided prompt selection for the final image; the baseline is identity-only evidence, not the final art direction.
+   A single post-lock direction choice only locks `L2` and advances to `L3`; it must not skip directly to the final prompt.
+   Broad modules should expose small-module pickers first: `L3/M7`, `L4/M8`, `L5/M9`, and `L6/M10`.
+9. Produce a modular prompt spec.
+10. Compile the final English `gpt-image-2` prompt.
+11. Generate only after the user says `开始生成图片`. Default to the built-in `image_gen` path; use the optional script/API workflows only when local file inputs, fixed profiles, repeatable payloads, or stricter local-reference control are explicitly needed.
 
 中文流程：
 
 1. 识别角色和来源作品。
 2. 收集或使用官方优先的参考图。
 3. 提取身份锚点：发型、眼睛、服装轮廓、颜色、配饰和原作视觉基线。
-4. 当用户表达模糊时，用低摩擦选项引导。
-5. 在不改变身份锚点的前提下探索情绪、风格、画幅和画面内容。
-6. 输出模块化提示词。
-7. 编译最终英文 `gpt-image-2` prompt。
-8. 直接生成，或使用锁脸优先的脚本流程获得更稳定的角色相似度。
+4. 当用户表达模糊时，把探索放在第一位，用低摩擦方向卡引导。
+5. 默认探索路径至少推进 10 轮后，才主动提示用户可以生成图片。
+6. 在不改变身份锚点的前提下探索情绪、风格、画幅和画面内容。
+7. 真实现有角色出图前，先创建或复用一个已接受的身份锁定基准图。
+8. 基准图通过后，继续引导用户选择最终成图提示词；基准图只锁身份，不决定最终画面方向。
+   用户选中一个基准图后的方向卡时，只锁定 L2 方向感，然后进入 L3，不能直接跳到最终提示词。
+   进入大模块时先给小模块选择器：`L3/M7`、`L4/M8`、`L5/M9`、`L6/M10`。
+9. 输出模块化提示词。
+10. 编译最终英文 `gpt-image-2` prompt。
+11. 用户说出 `开始生成图片` 后，才可以直接生成或使用锁脸优先的脚本流程获得更稳定的角色相似度。
+
+Complete dogfood tests for existing characters must include the lock pass. A
+final poster generated without an accepted lock image is only a prompt-quality
+demo, not a valid identity-preservation test.
 
 ## Installation / 安装
 
@@ -111,7 +127,7 @@ $anime-fanart-imagegen Asuka
 ```
 
 ```text
-DF
+AF
 ```
 
 ```text
@@ -127,7 +143,7 @@ A+C
 ```
 
 ```text
-生成
+开始生成图片
 ```
 
 Expected checkpoints:
@@ -136,8 +152,8 @@ Expected checkpoints:
 
 - After the character name, the skill should show a compact intent router instead of asking for a full prompt.
 - 输入角色名后，skill 应该给出简洁意图路由，而不是要求用户写完整 prompt。
-- After `DF`, it should explore vibe and style together.
-- 输入 `DF` 后，它应该同时探索氛围和风格。
+- After `AF`, it should explore direction and style together.
+- 输入 `AF` 后，它应该同时探索方向和风格。
 - After `再探索`, it should stay in the current branch and offer new alternatives.
 - 输入 `再探索` 后，它应该留在当前分支下给出新方向。
 - After `可以了`, it should output editable modules plus a compiled English prompt.
@@ -146,26 +162,74 @@ Expected checkpoints:
 ## Interaction Model / 交互模型
 
 If a user directly asks to generate a poster, cover, wallpaper, or key visual,
-the skill first asks whether to generate directly from the current brief or to
-guide and organize the prompt before generation.
+the skill first offers exploration: four concrete directions to choose from,
+with direct prompt preparation as the secondary path.
 
-如果用户直接要求生成海报、封面、壁纸或 key visual，skill 会先询问是直接按当前要求生成，
-还是先基于当前要求引导并整理提示词后再生成。
+如果用户直接要求生成海报、封面、壁纸或 key visual，skill 会先询问是否先给 4 个方向让用户选择，
+并把“直接给一版可生成提示词”作为次级路径。
 
 ```text
 我理解你要做 <角色/作品 + 海报方向>。
-你想 A. 直接按当前要求生成一版，还是 B. 先基于当前要求引导并整理提示词再生成？
+你想 A. 先给我 4 个方向让我选（推荐），还是 B. 直接给我一版可生成提示词？
 ```
+
+If the user chooses A, the four cards should be clearly different and written
+as user-facing creative choices, not internal axis labels:
+
+- `A 保守原作向`: safest canon-close result
+- `B 情绪电影向`: stronger mood and cinematic framing
+- `C 角色符号向`: stronger source-specific motif and identity hook
+- `D 风格探索向`: more stylized but still identity-safe
+
+Each card should include a short `画面感`, `差异点`, `角色钩子`, and `适合`
+line. The cards should differ on purpose, emotion, crop, style strength, or
+character distance, and include one character-specific hook from the source.
+
+During exploration, responses should stay lightweight: current branch, changed
+dimension, a few choices, and the next action. Full `M1`-`M12` modules and the
+compiled English prompt appear when the user is ready to finalize, asks for the
+full prompt, or says `开始生成图片`.
+
+Choice guidance should be explicit and repeatable: show lettered options (`A`,
+`B`, `C`), accept numeric aliases silently, and end exploration blocks with
+`怎么选`, `接下来`, and `已探索`. This keeps each round easy to answer without
+making the user understand modules, layers, or prompt terms.
+
+Every exploration choice set should also include one visible `推荐` option and
+short `风险` or `影响` notes. The recommendation gives users a low-effort default;
+the risk label tells them whether an option is safer for likeness, stronger in
+mood, or more likely to drift.
+
+Default exploration should not collapse into repeated three-choice menus. Normal
+rounds should offer `4-5` real creative options, and when the user says
+`再给几个`, `换一组`, or `都不满意`, the skill should stay on the same layer and
+provide `5-6` new alternatives.
+
+Every major prompt module can expose small modules first. For example, `M1 身份锚点`
+can split into hair, eyes/face, outfit silhouette, signature accessories, and
+non-negotiable anchors; `M9 光线色彩` can split into `人物打光`, `背景光`,
+`环境光`, `光线颜色`, `阴影质感`, and `角色原色保护`. The user can select multiple
+small modules, and the skill expands them one at a time instead of forcing a
+fixed preset.
+
+For vague/default-path requests, track `已探索: N/10`. Do not proactively show the
+copyable `开始生成图片` CTA until round 10. Users can still explicitly choose the
+direct prompt path or type `开始生成图片`; the 10-round rule only prevents the skill
+from pushing generation too early.
+
+Hard limit: no image-generation tool is called until the user says the exact phrase `开始生成图片`.
+
+硬限制：只有用户说出精确口令 `开始生成图片` 后，才可以调用生图工具。
 
 For vague requests, the skill starts with broad intent instead of technical controls.
 
-面对模糊请求时，skill 会先询问用户目标，而不是直接暴露复杂参数。
+面对模糊请求时，skill 会先让用户探索方向，而不是直接暴露复杂参数或要求用户写 prompt。
 
 ```text
-A. Finished image / 成品图
-B. Wallpaper or cover / 壁纸或封面
-C. Avatar or portrait / 头像或肖像
-D. Explore vibe / 探索氛围
+A. Explore directions / 探索方向（推荐，不用写 prompt）
+B. Finished image / 成品图
+C. Wallpaper or cover / 壁纸或封面
+D. Avatar or portrait / 头像或肖像
 E. Maximize likeness / 最大化角色相似度
 F. Change style / 改变风格
 G. Let the agent decide / 让 agent 决定
@@ -176,22 +240,30 @@ Users can reply with one option or mix options.
 用户可以选择一个选项，也可以混合选择。
 
 ```text
-D
-DF
+A
+AF
 A+C
 B but closer to F
 B 但更像 F
 ```
 
-If the user asks to explore more, the skill stays inside the current branch and offers new alternatives. It should stop only when the user says the direction is ready or asks to generate.
+If the user asks to explore more, the skill stays inside the current branch and offers new alternatives. On the default path, it should avoid pushing final generation until the exploration counter reaches 10. It should generate only after `开始生成图片`.
 
-如果用户要求“再探索”，skill 会留在当前分支下给出新的替代方向。只有当用户明确说“可以了”“生成”或等价表达时，探索才停止。
+如果用户要求“再探索”，skill 会留在当前分支下给出新的替代方向。默认路径未满 10 轮时，不主动催用户生成；只有说出 `开始生成图片` 后才生成图片。
 
 ## Modular Prompt Spec / 模块化提示词
 
-After exploration, the skill outputs a module list plus the compiled English prompt.
+After exploration, the skill outputs a short confirmation card, a module list, and
+the compiled English prompt.
 
-探索结束后，skill 会输出模块列表和编译后的英文提示词。
+探索结束后，skill 会输出一张中文确认卡、模块列表和编译后的英文提示词。
+
+The confirmation card is only a quick summary. It is not the editable prompt
+state. Any change to the card must be mapped back into `M1`-`M12` before the
+English prompt is updated.
+
+确认卡只用于快速确认，不是可编辑提示词状态。用户要求修改确认卡内容时，必须先映射回
+`M1`-`M12` 模块，再更新英文 prompt。
 
 ```text
 M1 Identity / 身份锚点
@@ -234,11 +306,11 @@ For Chinese-speaking users, the skill should present module labels and next acti
 
 面对中文用户时，模块名和下一步操作应该用中文展示，但最终生图 prompt 保持英文。
 
-## Local Script Workflow / 本地脚本流程
+## Optional Local Script Workflow / 可选本地脚本流程
 
-Use the Python CLI when you need repeatable outputs, fixed profiles, metadata sidecars, or a lock-first API workflow.
+By default, use the built-in chat `image_gen` flow for image generation. Use the Python CLI only when you need local reference files to be sent as real image inputs, repeatable outputs, fixed profiles, metadata sidecars, or a lock-first API workflow.
 
-如果需要可复现输出、固定尺寸配置、JSON 元数据，或锁脸优先的 API 流程，可以使用 Python CLI。
+默认使用 Codex 内置的 `image_gen` 出图。只有在需要把本地参考图作为真实图像输入、需要可复现输出、固定尺寸配置、JSON 元数据，或锁脸优先的 API 流程时，才使用 Python CLI。
 
 Install dependencies:
 
@@ -248,9 +320,9 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Set your API key:
+Set your API key only for the optional local script/API workflow:
 
-设置 API key：
+仅在使用可选本地脚本/API 流程时设置 API key：
 
 ```bash
 export OPENAI_API_KEY="..."
@@ -285,7 +357,7 @@ python scripts/anime_fanart.py generate \
   --series "Neon Genesis Evangelion" \
   --lock-image output/asuka-lock.png \
   --image refs/asuka/fullbody.png \
-  --profile poster-2k \
+  --profile poster-safe \
   --prompt "<compiled English image-2 prompt>" \
   --out output/asuka-poster.png
 ```
@@ -294,16 +366,68 @@ Use `--dry-run` to inspect the request payload without calling the API.
 
 使用 `--dry-run` 可以只检查请求内容，不实际调用 API。
 
+Generate from an accepted local baseline/lock image.
+
+Use this when a Codex-generated baseline image already looks close enough and
+you want the next image call to really read that file, not only a text summary
+of it. The lock image is always sent as image input #1. Extra `--image` values
+are sent after it.
+
+The baseline is identity-only evidence: face, hair, eyes, outfit silhouette,
+color hierarchy, and signature cues. The final prompt should still control the
+pose, crop, camera angle, scene, lighting, mood, background, and finish.
+
+```bash
+python scripts/generate_from_lock.py \
+  --character "Rei Ayanami" \
+  --series "Neon Genesis Evangelion" \
+  --lock-image output/rei-lock-accepted.png \
+  --profile poster-safe \
+  --prompt-file output/rei-final-prompt.txt \
+  --out output/rei-final-from-lock.png
+```
+
+PowerShell dry-run example for a baseline saved by Codex:
+
+```powershell
+python scripts\generate_from_lock.py `
+  --character "Rei Ayanami" `
+  --series "Neon Genesis Evangelion" `
+  --lock-image "C:\Users\Lsq\.codex\generated_images\<thread-id>\<image-id>.png" `
+  --profile poster-safe `
+  --prompt-file output\rei-final-prompt.txt `
+  --out output\rei-final-from-lock.png `
+  --dry-run
+```
+
+In the dry-run JSON, verify that `source_images[0]` and
+`dry_run_payload.image[0]` are the accepted lock image path. That confirms the
+API request will include the real image file.
+
+If the final result copies the baseline pose or crop too closely, strengthen the
+scene/composition lines in the prompt rather than replacing the lock image.
+
 ## Output Profiles / 输出配置
 
-- `poster-2k`: vertical hero art / 竖版角色主视觉
-- `scene-2k`: horizontal scene or wallpaper / 横版场景或壁纸
-- `square-2k`: avatar, social image, or square crop / 头像、社交图或方图
-- `banner-2k`: wide cover or header image / 宽幅封面或头图
+- `poster-safe`: `1024x1536` stable vertical poster source / 稳妥竖版主视觉源图
+- `scene-safe`: `1536x1024` stable horizontal scene source / 稳妥横版场景源图
+- `square-safe`: `1024x1024` stable avatar or square source / 稳妥头像或方图源图
+- `banner-safe`: `1536x1024` stable cover source / 稳妥封面源图
 
-4K profiles are available, but should be treated as opt-in final delivery profiles.
+The named profiles use API-reference-compatible defaults so the first script
+path stays reliable. For explicit 2K or 4K delivery, pass a manual `--size`
+that satisfies the current `gpt-image-2` constraints: longest edge `<= 3840`,
+both edges multiples of `16`, aspect ratio `<= 3:1`, and total pixels between
+`655,360` and `8,294,400`. Outputs above `2560x1440` total pixels are treated
+as experimental. Legacy names such as `poster-2k` still work as compatibility
+aliases, but the script warns and maps them to the matching `*-safe` profile.
 
-4K 配置可用，但建议只在最终交付阶段明确启用。
+命名 profile 使用兼容 API Reference 的稳妥默认尺寸，避免默认脚本路径先失败。
+如果用户明确要求 2K 或 4K，使用手动 `--size`，并满足当前 `gpt-image-2`
+约束：最长边 `<= 3840`、两边都是 `16` 的倍数、长短边比例 `<= 3:1`，
+且总像素在 `655,360` 到 `8,294,400` 之间。超过 `2560x1440` 总像素的输出
+按实验性大尺寸处理。`poster-2k` 等旧名称仍作为兼容别名可用，但脚本会提示
+它们已映射到对应的 `*-safe` profile。
 
 ## Repository Structure / 仓库结构
 
@@ -327,6 +451,8 @@ anime-fanart-imagegen/
 - `references/recovery.md`: recovery rules for identity or quality drift / 角色或质量漂移时的修复规则
 - `references/qa-checklist.md`: acceptance checks before final delivery / 最终交付前检查清单
 - `scripts/anime_fanart.py`: lock and generation workflow / 锁脸和生成脚本
+- `scripts/image_gen_refs.py`: lightweight local-reference wrapper / 轻量本地参考图 wrapper
+- `scripts/generate_from_lock.py`: convenience wrapper that sends an accepted lock image as image input #1 / 将已接受基准图作为第一个真实图像输入的便捷脚本
 
 ## Distribution / 分发
 

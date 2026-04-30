@@ -13,12 +13,25 @@ The user should not need to know prompt engineering vocabulary. Convert rough ta
 Prefer this order:
 
 1. infer what can be inferred
-2. gate explicit poster or cover generation requests with a direct-vs-guided confirmation
-3. route by user intent
-4. recommend one default path
-5. offer micro-chips or discovery probes only if needed
-6. prepare the final prompt
-7. render only after the user chooses direct generation, asks to generate after guidance, selects a direction, or has already provided a complete prompt
+2. put exploration first: offer direction cards or an exploration-first intent router
+3. let the user choose, mix, delegate, or ask to skip exploration
+4. recommend one default only as a selectable path, not as a hidden decision
+5. on the default exploration path, keep exploring for at least `10` rounds before
+   proactively offering the generation CTA
+6. prepare the final prompt after a direction is chosen or delegated
+7. render only after the latest user message contains the exact phrase `开始生成图片`
+
+Hard generation gate: option letters, selected directions, "生成", "出图",
+"直接生成", "按这个生成", "可以了", "就这个", "you decide", and complete
+prompts are not image-generation permission. They only authorize guidance,
+prompt preparation, or prompt finalization. Do not call any image-generation
+tool until the user says `开始生成图片`.
+
+Exploration-depth gate: for default-path users, track `exploration_rounds` and
+show progress as `已探索: N/10`. Do not proactively offer the copyable
+`开始生成图片` CTA before round 10. This gate does not block users who explicitly
+choose workflow `B`, say "不要探索" / "直接给提示词", or type the exact
+`开始生成图片` phrase themselves.
 
 Do not start with a long list of questions.
 
@@ -52,19 +65,82 @@ Default behavior:
 
 ```text
 我理解你要做 <character/source + requested poster direction>。
-你想 A. 直接按当前要求生成一版，还是 B. 先基于当前要求引导并整理提示词再生成？
+你想 A. 先给我 4 个方向让我选（推荐），还是 B. 直接给我一版可生成提示词？
 ```
 
 Route the answer:
 
-- `A`, `直接生成`, `按这个生成`, `现在出图`, or equivalent -> infer missing slots conservatively and render
-- `B`, `引导`, `完善提示词`, `先整理 prompt`, or equivalent -> continue with the guided prompt workflow
+- `A`, `探索`, `引导`, `给我几个方向`, `先看看方向`, `完善提示词`, `不知道怎么写 prompt`, or equivalent -> show four direction cards before finalizing modules and prompt
+- `B`, `直接给提示词`, `不要探索`, `无需引导`, `直接生成`, `按这个生成`, `现在出图`, or equivalent -> infer missing slots conservatively and prepare final modules plus prompt, but do not render
+
+For workflow `A`, use four user-facing direction cards by default:
+
+```text
+当前层级: L2 方向感 / 已锁定: <character/source + identity baseline>.
+
+A. 保守原作向
+画面感: <一句用户能立刻想象的画面>.
+差异点: <3-5 个用户能看懂的差异，例如用途 / 情绪 / 构图 / 风格强度 / 角色距离>.
+角色钩子: <与角色或作品强相关的视觉母题>.
+适合: <用白话说明适合什么结果>.
+风险: <低/中/高 + 一句原因>.
+
+B. 情绪电影向
+画面感: <一句用户能立刻想象的画面>.
+差异点: <3-5 个用户能看懂的差异>.
+角色钩子: <与角色或作品强相关的视觉母题>.
+适合: <用白话说明适合什么结果>.
+风险: <低/中/高 + 一句原因>.
+
+C. 角色符号向
+画面感: <一句用户能立刻想象的画面>.
+差异点: <3-5 个用户能看懂的差异>.
+角色钩子: <与角色或作品强相关的视觉母题>.
+适合: <用白话说明适合什么结果>.
+风险: <低/中/高 + 一句原因>.
+
+D. 风格探索向
+画面感: <一句用户能立刻想象的画面>.
+差异点: <3-5 个用户能看懂的差异>.
+角色钩子: <与角色或作品强相关的视觉母题>.
+适合: <用白话说明适合什么结果>.
+风险: <低/中/高 + 一句原因>.
+
+推荐: <A-D + 一句原因>.
+怎么选: 回 A-D（也接受 1-4）；不确定就回"推荐"或"你选"；想融合就回"A+C"；都不满意就回"再给几个"或"换一组"。
+接下来: 我会锁定方向感，然后进入画面内容；不会直接生成。
+已探索: 1/10
+```
+
+The four cards must differ on at least `3` of these axes: purpose, emotion,
+crop, style strength, and character distance. Each card must include one
+character-specific hook from the source, such as a relationship, signature
+object, world location, theme metaphor, or original visual motif. Translate the
+axes into plain Chinese instead of showing internal field names as the card.
+Mark exactly one card as `推荐`, with a short reason, and give every card a
+plain `风险: 低/中/高` note about likeness, face readability, scene complexity, or
+canon drift.
+
+Example card:
+
+```text
+A. 保守原作向
+画面感: 露西站在夜之城冷色霓虹边缘，脸部清楚、姿态克制，整体像官方宣传视觉。
+差异点: 成品海报 / 冷静疏离 / 半身到三分之二身 / 接近原作 / 角色优先。
+角色钩子: 月球梦、白色短发、黑色网跑服与夜之城霓虹形成对照。
+适合: 你想先要一张稳、像本人、可直接用的图。
+风险: 低，最稳但惊喜少。
+```
+
+Do not write the final prompt yet unless the user chooses a card, asks the
+agent to choose, or says workflow `B` instead.
 
 If the original request already says "不要问", "无需引导", "直接生成",
-"马上出图", or equivalent, treat that as workflow `A` and render without
-asking this gate question. If the character identity or source is ambiguous,
-combine the identity clarification with the same single question instead of
-asking multiple questions.
+"马上出图", or equivalent, treat that as workflow `B` for prompt preparation
+only. Generate only if the same or later user message contains `开始生成图片`.
+If the character identity or source is ambiguous, combine the identity
+clarification with the same single question instead of asking multiple
+questions.
 
 ## Guided-First Rule
 
@@ -88,13 +164,24 @@ Default behavior:
 
 - identify the character and likely source
 - infer the canonical visual baseline
-- show an intent router across broad user goals
-- recommend one path that is likely to produce a strong first result
+- show an exploration-first intent router across broad user goals
+- recommend exploration as the default route unless the user clearly asked to skip it
 - show optional micro-chips for quick steering
-- provide a ready English prompt for the recommended path
-- ask for a low-effort next action such as `A`, `B`, `C`, `generate`, or one mood word
+- do not provide the full English prompt until the user chooses, mixes, or delegates a direction
+- ask for a low-effort next action with `怎么选` and `接下来` lines, such as `A`, `B`, `C`, `你选`, `再探索`, or one mood word; do not proactively mention `开始生成图片` before `exploration_rounds >= 10`
 
-Do not call the image tool during this first guided response unless the user explicitly says "generate now", "directly render", "no need to ask", or selects an existing direction.
+When the user chooses exploration, hand off to `discovery-loop.md` and follow
+the progressive ladder. The first exploration reply should start at `L2 方向感`
+unless the user already supplied a use case or scene.
+
+During this handoff, initialize `exploration_rounds` and follow the `10`-round
+depth gate from `discovery-loop.md`. The first direction-card reply counts as
+round 1 and should show `已探索: 1/10`.
+
+Do not call the image tool during this first guided response unless the user
+explicitly says `开始生成图片`. Phrases like "generate now", "directly render",
+"no need to ask", "直接生成", or selecting an existing direction still mean
+prepare or finalize the prompt unless `开始生成图片` is present.
 
 ## Intake Modes
 
@@ -111,8 +198,8 @@ Default behavior:
 - infer the series
 - gather references
 - build anchors
-- choose a faithful poster or render
-- produce a recommended prompt and `2-3` nearby alternatives
+- show exploration-first direction cards
+- include one recommended card, but make it selectable rather than final
 
 ### 2. Mood-only
 
@@ -204,20 +291,20 @@ Use the intent router as the default selection UX. It asks what outcome the user
 
 ### Intent options
 
-- `A Finished image`: user wants a strong all-purpose result for sharing
-- `B Wallpaper or cover`: user wants a scene, banner, desktop image, or social header
-- `C Avatar or portrait`: user wants the face large and recognizable
-- `D Explore vibe`: user is unsure and wants taste discovery before generation
+- `A Explore directions`: user wants the agent to help discover the best direction before prompt writing
+- `B Finished image`: user wants a strong all-purpose result for sharing
+- `C Wallpaper or cover`: user wants a scene, banner, desktop image, or social header
+- `D Avatar or portrait`: user wants the face large and recognizable
 - `E Maximize likeness`: user cares most that the character reads correctly
 - `F Change style`: user wants reinterpretation, AU, fashion, cinematic, painterly, game-promo, or another style shift
 - `G Surprise me`: user wants the agent to choose a high-confidence route
 
 ### Intent routing behavior
 
-- `A Finished image` -> recommend a polished poster or character-forward key visual
-- `B Wallpaper or cover` -> recommend horizontal or panoramic scene-first composition
-- `C Avatar or portrait` -> recommend face-first portrait or half-body image
-- `D Explore vibe` -> return `4-6` vibe chips before writing the final prompt
+- `A Explore directions` -> return `4-6` abstract taste cards before writing the final prompt
+- `B Finished image` -> recommend a polished poster or character-forward key visual
+- `C Wallpaper or cover` -> recommend horizontal or panoramic scene-first composition
+- `D Avatar or portrait` -> recommend face-first portrait or half-body image
 - `E Maximize likeness` -> start with identity lock and neutral lighting
 - `F Change style` -> ask for or infer style strength, then preserve face/outfit/source anchors
 - `G Surprise me` -> choose the strongest low-risk route and state the choice briefly
@@ -265,10 +352,11 @@ Do not show every control at once.
 
 Use this order:
 
-1. intent router
-2. recommendation and ready prompt
-3. micro-chips
-4. advanced creative-control axes only if the user asks to customize
+1. exploration-first intent router
+2. direction cards or taste cards
+3. recommendation as a selectable default
+4. ready prompt only after a direction is chosen or delegated
+5. advanced creative-control axes only if the user asks to customize
 
 This makes the first response broadly useful without feeling like a form.
 
@@ -323,10 +411,10 @@ Use these axes only as advanced controls. Do not show the full axis grid by defa
 
 Use these when the user did not specify them:
 
-- poster-like hero image -> `poster-2k`
-- wallpaper-like scene -> `scene-2k`
-- icon/avatar/social crop -> `square-2k`
-- header/cover/wide illustration -> `banner-2k`
+- poster-like hero image -> `poster-safe`
+- wallpaper-like scene -> `scene-safe`
+- icon/avatar/social crop -> `square-safe`
+- header/cover/wide illustration -> `banner-safe`
 - likeness-first pass -> `neutral-daylight`
 - romantic or soft mood -> `spring-haze`
 - premium or polished -> `polished-key-visual`
@@ -338,11 +426,13 @@ Use these when the user did not specify them:
 When the request is underspecified, produce a compact pack in this order:
 
 1. interpreted brief in Chinese
-2. intent router with broad user goals
-3. recommended path
+2. exploration-first intent router with broad user goals
+3. `4-6` direction cards or a recommended exploration path
 4. optional micro-chips
-5. English prompt for the recommended path
-6. one-line next action
+5. one-line next action
+
+Do not include the full English prompt in this first response unless the user
+asks to skip exploration or says `B` in the direct poster gate.
 
 Do not make the user choose from many technical axes on the first turn. Use technical axes only after they ask for custom control.
 
@@ -351,31 +441,39 @@ Do not make the user choose from many technical axes on the first turn. Use tech
 Use this shape for vague first-turn requests:
 
 ```text
-I will treat this as: <character> from <series>, <version/baseline>.
+我会先按这个理解: <character> 来自 <series>，版本/视觉基线是 <version/baseline>。
 
-What do you want first?
-A. Finished image
-B. Wallpaper or cover
-C. Avatar or portrait
-D. Explore vibe
-E. Maximize likeness
-F. Change style
-G. Surprise me
+你想先做哪种方向？
+A. 探索方向（推荐，不用写 prompt）
+B. 成品图
+C. 壁纸或封面
+D. 头像或肖像
+E. 最大化角色相似度
+F. 改变风格
+G. 我来决定
 
-Recommended: <one route and why in one short sentence>
-Quick tweaks: <5-8 chips, for example "softer / cinematic / dreamier / closer to canon / horizontal / face-first">
+推荐: A，因为你不用先写 prompt，只要从方向里选最接近的。
+快速微调: <5-8 chips, for example "更柔和 / 更电影感 / 更梦幻 / 更接近原作 / 横版 / 脸部优先">
 
-Prompt:
-<output-ready English prompt>
-
-Next: reply A-G, say "generate", say "explore more", or add one tweak word.
+怎么选: 回 A-G（也接受 1-7）；不确定就回"推荐"或"你选"；想换一组就回"再探索"；也可以补一个微调词。
+接下来: 我会把你的选择转成第一组方向卡；满 10 轮或你要求跳过时再整理英文提示词。
 ```
 
-If the user chooses `D Explore vibe`, return abstract taste cards instead of generating. Do not decide exact picture content in that response.
+If the user chooses `A Explore directions`, return abstract taste cards instead
+of generating. Do not decide exact picture content in that response.
 
 ## Taste Cards
 
-Use taste cards only after the user asks to explore or seems undecided after the intent router.
+Use taste cards as the default for `A 探索方向`, after the user asks to explore,
+or when the user seems undecided after the intent router.
+
+Taste cards are `L2 方向感`, not final prompt choices. After the user picks or
+mixes a taste card, advance to `L3 画面内容`; do not jump directly to lighting,
+style, or final prompt unless the user asks.
+
+On the default exploration path, each taste-card selection, mix, or `再探索`
+increments `exploration_rounds`. Keep the user in this progressive loop until at
+least round 10 before proactively showing the generation CTA.
 
 Each card should combine:
 
@@ -418,29 +516,27 @@ When rewriting weak user language into an `image-2` prompt:
 - making the background more complex than the user's actual intent requires
 - using strong stylization before the canonical baseline is established
 
-## Compact Chinese Response Template
+## 中文紧凑回复模板
 
-Use a format like this when the user is unclear:
+用户表达不清楚时，用这种格式：
 
 ```text
-Interpreted brief: <one-line interpreted brief>
+理解简述: <一句话说明我理解的角色、作品和目标>
 
-What do you want first?
-A. Finished image
-B. Wallpaper or cover
-C. Avatar or portrait
-D. Explore vibe
-E. Maximize likeness
-F. Change style
-G. Surprise me
+你想先做哪种方向？
+A. 探索方向（推荐，不用写 prompt）
+B. 成品图
+C. 壁纸或封面
+D. 头像或肖像
+E. 最大化角色相似度
+F. 改变风格
+G. 我来决定
 
-Recommended: <one route>
-Quick tweaks: <chips>
-
-Prompt: <ready English prompt>
+推荐: A。你不用先写 prompt，只要选最接近的方向。
+快速微调: <5-8 个可直接回复的微调词>
 ```
 
-Then provide the English prompt or execute the generation workflow.
+用户选定或委托一个方向后，默认继续进入递进探索；未满 10 轮时不要主动提示生成口令。用户明确要求跳过探索或已满 10 轮后，再提供英文提示词，并等到用户说出精确口令 `开始生成图片` 后再执行任何生成流程。
 
 ## Escalation Rule
 
