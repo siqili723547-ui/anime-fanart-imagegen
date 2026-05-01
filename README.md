@@ -93,6 +93,28 @@ What should happen / 预期行为：
 - English: Final generation should happen only after the exact confirmation phrase.
 - 中文：最终生成必须等到明确口令出现后才执行。
 
+## Workflow Details / 工作流细节
+
+English:
+
+- Exploration is the default path. The assistant should help users choose a direction before compiling the final prompt.
+- The default exploration target is `10` rounds before proactively offering the generation phrase, unless the user explicitly asks to skip exploration.
+- Direction cards normally show `4-5` concrete options, and `5-6` options when the user asks for more or wants a different set.
+- Users can mix options, such as `A+C`, or ask for a direction to be closer to another option.
+- Large modules (`M1`-`M12`) can expose smaller submodules. For broad areas such as scene, composition, lighting, and finish, the assistant should first let the user choose which submodule to refine.
+- For real existing-character work, identity-sensitive flows should use an identity lock pass. The accepted lock image constrains identity only; it should not force the final pose, crop, background, lighting, or render style.
+- After generation, feedback should map back to the matching module instead of restarting the prompt from scratch.
+
+中文：
+
+- 默认路径是先探索，不急着直接生成。助手应先帮助用户确定方向，再整理最终提示词。
+- 默认探索目标是 `10` 轮；除非用户明确要求跳过探索，否则不要过早主动催促生成。
+- 方向卡通常给 `4-5` 个具体选项；当用户说“再来几个”或“换一组”时，给 `5-6` 个新方向。
+- 用户可以混合选择，例如 `A+C`，也可以说“更接近另一个选项”。
+- 大模块 `M1`-`M12` 可以继续拆成小模块。像画面内容、构图、光线、风格质感这类大模块，应先让用户选择要细化的小模块。
+- 对真实已有角色，重视相似度时应走 identity lock。已确认的锁脸图只约束身份，不应该限制最终姿势、裁切、背景、光影和渲染风格。
+- 生成后的反馈应回到对应模块继续修正，而不是从零重写提示词。
+
 ## Repository Layout / 仓库结构
 
 - `SKILL.md`: primary skill contract and runtime behavior / Skill 主说明与运行约束。
