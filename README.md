@@ -1,138 +1,129 @@
-# Anime Fanart Imagegen Skill
+# Anime Fanart Imagegen Skill / 动漫同人图像生成 Skill
 
-A portable Codex skill that guides users through **iterative prompt exploration** for
-anime-character image generation and keeps identity stable across generations.
+English: A portable Codex skill for turning rough anime fanart ideas into an identity-aware, editable image-generation workflow.
 
-The workflow is designed for cases where users know the character they want but
-need help turning a rough idea into a strong, editable prompt specification.
+中文：这是一个可移植的 Codex Skill，用来把模糊的动漫同人图想法转成可探索、可锁定角色识别度、可模块化编辑的图像生成流程。
 
-## Highlights
+## What It Does / 功能定位
 
-- Supports guided, multi-turn exploration before generation.
-- Uses references (or generated baselines) as identity anchors.
-- Keeps prompts modular (`M1`-`M12`) so users can revise one aspect at a time.
-- Generates final output only after the user is ready (or explicitly asks to generate).
-- Provides two execution paths:
-  - Codex built-in image generation flow (recommended default).
-  - Local Python scripts for repeatable payloads, local references, and strict reference-control flows.
+English:
 
-## Key Principle
+- Guides the user through multi-turn direction exploration before generation.
+- Keeps known characters recognizable by separating identity anchors from scene choices.
+- Uses modular prompt fields (`M1`-`M12`) so users can revise one part without rewriting the whole prompt.
+- Requires explicit generation confirmation before calling image generation.
+- Supports two execution paths: Codex built-in `image_gen` by default, and local Python scripts for stricter local-reference workflows.
 
-For this skill, image generation should not jump to completion too early.
+中文：
 
-- Let the user explore direction, mood, and composition first.
-- Preserve identity anchors separately from scene/composition decisions.
-- Let users edit module-level choices (`M1`-`M12`) before final generation.
-- Treat confirmation cards as a summary, not the source of truth. The module state is the source of truth.
+- 在生成图片前先引导用户多轮探索方向、情绪、构图和风格。
+- 把角色身份锚点和场景创意分开，降低角色漂移。
+- 使用 `M1`-`M12` 模块化提示词，方便只改某一部分。
+- 只有用户明确说出生成口令后才生成图片。
+- 默认使用 Codex 内置 `image_gen`；需要本地参考图、可复现 payload、锁脸图流程时再使用 Python 脚本。
 
-## Install
+## Core Rule / 核心规则
 
-```bash
-git clone https://github.com/siqili723547-ui/anime-fanart-imagegen ~/.codex/skills/anime-fanart-imagegen
+English: Do not call any image-generation tool until the user says exactly:
+
+中文：在用户没有明确说出下面这句话之前，不调用任何图像生成工具：
+
+```text
+开始生成图片
 ```
 
-On Windows PowerShell:
+English: Before that phrase appears, the skill should help the user explore options, refine direction cards, and finalize the `M1`-`M12` prompt modules.
 
-```powershell
-git clone https://github.com/siqili723547-ui/anime-fanart-imagegen "$env:USERPROFILE\.codex\skills\anime-fanart-imagegen"
-```
+中文：在这句话出现之前，Skill 应该帮助用户探索方向卡、细化选择，并确认 `M1`-`M12` 模块化提示词。
 
-Restart Codex after installation.
+## Install / 安装
 
-Preferred install (recommended):
+Preferred install / 推荐安装：
 
 ```bash
 npx skills add https://github.com/siqili723547-ui/anime-fanart-imagegen -g
 ```
 
-If `npx skills find anime-fanart-imagegen` still cannot find it, use the direct clone command above and restart Codex manually. `skills find` depends on the public skill index; direct GitHub URL installation is the supported path for this repository until that index includes the skill.
+Manual install on macOS/Linux / macOS 或 Linux 手动安装：
 
-## Quick Start (Codex)
+```bash
+git clone https://github.com/siqili723547-ui/anime-fanart-imagegen ~/.codex/skills/anime-fanart-imagegen
+```
 
-After installation, the normal in-chat flow is:
+Manual install on Windows PowerShell / Windows PowerShell 手动安装：
 
-1. Start from character intent (for example `Asuka`).
-2. Choose exploration options.
-3. Continue branching until the final direction is clear.
-4. Confirm modular prompt spec.
-5. Generate only when user confirms.
+```powershell
+git clone https://github.com/siqili723547-ui/anime-fanart-imagegen "$env:USERPROFILE\.codex\skills\anime-fanart-imagegen"
+```
 
-### Basic smoke test in Codex
+English: Restart Codex after installation. If `npx skills find anime-fanart-imagegen` cannot find this skill, use direct GitHub URL installation. `skills find` depends on the public skill index, and this repository may be usable before it appears there.
 
-Send in chat:
+中文：安装后请重启 Codex。如果 `npx skills find anime-fanart-imagegen` 搜不到它，请直接使用 GitHub URL 安装。`skills find` 依赖公开索引，仓库本身可以先通过直链安装使用。
+
+## Quick Start in Codex / Codex 快速开始
+
+English example:
 
 ```text
 $anime-fanart-imagegen Asuka
 AF
-再来
+more options
 A+C
-开始生成
+开始生成图片
 ```
 
-What to check:
-
-- You get a short intent router instead of requiring a full prompt up front.
-- You can mix options like `A+C` or `B but closer to F`.
-- You can explore further without losing branch context.
-- Final output appears only after confirmation phrase.
-
-## Repository Layout
-
-- `SKILL.md` — primary skill contract and runtime behavior.
-- `agents/openai.yaml` — UI metadata / default prompt wiring.
-- `references/` — workflow, discovery loop, quality, prompts, and recovery rules.
-- `scripts/anime_fanart.py` — main CLI for lock → generate/lock+generate flow.
-- `scripts/image_gen_refs.py` — image generation from local reference images.
-- `scripts/generate_from_lock.py` — generate final image with accepted lock as image input #1.
-
-## 中文快速上手
-
-安装后，可直接在 Codex 中使用以下流程：
+中文示例：
 
 ```text
 $anime-fanart-imagegen 明日香
 AF
-再来
+再来几个方向
 A+C
-开始生成
+开始生成图片
 ```
 
-中文分支建议动作：
+What should happen / 预期行为：
 
-- 先给角色名或关键词：`明日香`
-- 收到默认选项后可继续输入 `AF`、`再来`、`A+C` 等进行探索
-- 不要在还没到位时马上下命令，等确认后再说 `开始生成`
-- 需要继续扩展细节时继续沿当前分支输入 `再来`、`换个方向`
-- 想改模块时可直接说 `只改M9光线`、`只改M8构图`
+- English: The skill should first show direction choices instead of asking the user to write a full prompt.
+- 中文：Skill 应该先给方向选择，而不是要求用户一开始就写完整提示词。
+- English: The user can select options such as `A+C`, `B`, or "closer to F".
+- 中文：用户可以输入 `A+C`、`B`、`更接近 F` 这类选择。
+- English: The flow can continue for more exploration rounds before generation.
+- 中文：在生成前可以继续探索多个分支。
+- English: Final generation should happen only after the exact confirmation phrase.
+- 中文：最终生成必须等到明确口令出现后才执行。
 
-本地脚本也支持中文场景的同名参数（参数名为英文，中文内容可写在 prompt 文件中）：
+## Repository Layout / 仓库结构
 
-```bash
-python scripts/anime_fanart.py generate \
-  --character "明日香·兰克莱·索留" \
-  --series "新世纪福音战士" \
-  --image refs/asuka/face.png \
-  --prompt-file output/zh-final-prompt.txt \
-  --out output/zh-asuka-final.png
-```
+- `SKILL.md`: primary skill contract and runtime behavior / Skill 主说明与运行约束。
+- `agents/openai.yaml`: Codex UI metadata and default prompt wiring / Codex UI 元数据与默认提示词入口。
+- `references/`: discovery loop, UX rules, prompt modules, quality rules, and recovery guidance / 探索流程、交互规则、提示词模块、质量标准和恢复策略。
+- `scripts/anime_fanart.py`: main local CLI for lock, generate, and lock+generate workflows / 本地完整 CLI，支持锁脸、生成、锁脸后生成。
+- `scripts/generate_from_lock.py`: convenience CLI for generating from an accepted lock image / 使用已接受锁脸图继续生成的快捷入口。
+- `scripts/image_gen_refs.py`: lightweight CLI for image generation from local reference images / 使用本地参考图生成的轻量入口。
+- `scripts/test_anime_fanart.py`: minimal regression tests for scripts and workflow assumptions / 脚本与流程假设的最小回归测试。
 
-## Python Environment
+## Python Environment / Python 环境
 
-Use Python 3.11+.
+English: Python scripts are optional. Use them only when you need local reference images, repeatable API payloads, or strict lock-image control.
 
-Install dependencies:
+中文：Python 脚本是可选高级路径。只有在需要本地参考图、可复现 API payload、严格锁脸图控制时才需要使用。
+
+Use Python 3.11+ / 使用 Python 3.11 或更高版本。
+
+Install dependencies / 安装依赖：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Install OpenAI SDK:
+Install the OpenAI SDK if needed / 如有需要安装 OpenAI SDK：
 
 ```bash
 uv pip install openai
 ```
 
-Set key for local script workflow:
+Set an API key for local script generation / 为本地脚本设置 API key：
 
 ```bash
 export OPENAI_API_KEY="..."
@@ -144,11 +135,19 @@ Windows PowerShell:
 $env:OPENAI_API_KEY = "..."
 ```
 
-This repository defaults local scripts to `gpt-image-2.0`. Override it with `--model` only when your local environment requires a different image model name.
+Default model / 默认模型：
 
-## CLI Commands
+```text
+gpt-image-2.0
+```
 
-### 1) Create a character lock image
+English: Override it with `--model` only when your local environment requires a different image model name.
+
+中文：只有当你的本地环境必须使用其他图像模型名时，才通过 `--model` 覆盖。
+
+## CLI Commands / CLI 命令
+
+Create a character lock image / 创建角色锁脸图：
 
 ```bash
 python scripts/anime_fanart.py lock \
@@ -159,11 +158,7 @@ python scripts/anime_fanart.py lock \
   --out output/asuka-lock.png
 ```
 
-- Purpose: create a clean identity baseline.
-- Profile defaults: `square-safe` unless overridden.
-- Use this before final generation when you need strong identity continuity.
-
-### 2) Generate final image from prompt
+Generate final image from prompt / 根据最终提示词生成图片：
 
 ```bash
 python scripts/anime_fanart.py generate \
@@ -174,34 +169,7 @@ python scripts/anime_fanart.py generate \
   --out output/asuka-final.png
 ```
 
-Optional: provide a lock image to anchor identity.
-
-```bash
-python scripts/anime_fanart.py generate \
-  --character "Asuka Langley Soryu" \
-  --series "Neon Genesis Evangelion" \
-  --lock-image output/asuka-lock.png \
-  --image refs/asuka/fullbody.png \
-  --prompt-file output/asuka-final-prompt.txt \
-  --out output/asuka-final.png
-```
-
-- The lock image is identity-only evidence; final prompt still controls mood, crop, scene, and finish.
-
-### 3) Run lock + final generation in one step
-
-```bash
-python scripts/anime_fanart.py run \
-  --character "Rei Ayanami" \
-  --series "Neon Genesis Evangelion" \
-  --image refs/rei/face.png \
-  --image refs/rei/style.png \
-  --prompt "<final English prompt>" \
-  --lock-out output/rei-lock.png \
-  --out output/rei-final.png
-```
-
-### 4) Generate with accepted lock image (convenience entry)
+Generate with an accepted lock image / 使用已确认锁脸图生成：
 
 ```bash
 python scripts/generate_from_lock.py \
@@ -213,7 +181,7 @@ python scripts/generate_from_lock.py \
   --out output/rei-final-from-lock.png
 ```
 
-### 5) General local-reference generation
+General local-reference generation / 使用本地参考图生成：
 
 ```bash
 python scripts/image_gen_refs.py \
@@ -223,9 +191,22 @@ python scripts/image_gen_refs.py \
   --out output/result.png
 ```
 
-### Dry run (recommended before spending API calls)
+Chinese content can be passed through argument values or prompt files / 中文内容可以写在参数或 prompt 文件里：
 
-All scripts support `--dry-run` and print request metadata/payload for inspection.
+```bash
+python scripts/anime_fanart.py generate \
+  --character "明日香·兰格雷·惣流" \
+  --series "新世纪福音战士" \
+  --image refs/asuka/face.png \
+  --prompt-file output/zh-final-prompt.txt \
+  --out output/zh-asuka-final.png
+```
+
+## Dry Run / 试运行
+
+English: All scripts support `--dry-run`. Use it before spending API calls.
+
+中文：所有脚本都支持 `--dry-run`。建议在真正消耗 API 调用前先检查 payload。
 
 ```bash
 python scripts/generate_from_lock.py \
@@ -237,46 +218,81 @@ python scripts/generate_from_lock.py \
   --dry-run
 ```
 
-For lock workflows, verify the payload order in dry-run output:
-`source_images[0]` and image #1 should be the accepted lock image.
+English: For lock workflows, verify that `source_images[0]` is the accepted lock image.
 
-## Output Profiles
+中文：锁脸图流程里，请确认 `source_images[0]` 是已接受的锁脸图。
 
-Default profiles are API-safe presets:
+## Output Profiles / 输出规格
 
-- `poster-safe`: `1024x1536`
-- `scene-safe`: `1536x1024`
-- `square-safe`: `1024x1024`
-- `banner-safe`: `1536x1024`
+Default profiles / 默认规格：
 
-Legacy aliases:
+- `preview`: `1024x1024`, medium quality.
+- `poster-safe`: `1024x1536`, high quality.
+- `scene-safe`: `1536x1024`, high quality.
+- `square-safe`: `1024x1024`, high quality.
+- `banner-safe`: `1536x1024`, high quality.
+
+Legacy aliases / 旧别名：
 
 - `poster-2k` -> `poster-safe`
 - `scene-2k` -> `scene-safe`
 - `square-2k` -> `square-safe`
 - `banner-2k` -> `banner-safe`
 
-To request true 2K/4K, pass explicit `--size` (must satisfy model constraints).
+English: To request true 2K or 4K output, pass explicit `--size` and keep model constraints in mind.
 
-## Size Constraints (gpt-image-2.0)
+中文：如果需要真正的 2K 或 4K 输出，请显式传入 `--size`，并确保符合模型尺寸约束。
 
-- both edges must be multiples of 16
-- longest edge `<= 3840`
-- aspect ratio `<= 3:1`
-- total pixels in `[655,360, 8,294,400]`
-- outputs above `2560x1440` are treated as experimental by this repository.
+## Size Constraints / 尺寸约束
 
-## Metadata and outputs
+For `gpt-image-2.0` / 针对 `gpt-image-2.0`：
 
-Each successful generation writes:
+- Both edges must be multiples of 16 / 宽高都必须是 16 的倍数。
+- Longest edge must be `<= 3840` / 最长边必须 `<= 3840`。
+- Aspect ratio must be `<= 3:1` / 宽高比必须 `<= 3:1`。
+- Total pixels must be in `[655,360, 8,294,400]` / 总像素必须在 `[655,360, 8,294,400]` 范围内。
+- Outputs above `2560x1440` are treated as experimental by this repository / 本仓库把高于 `2560x1440` 的输出视为实验路径。
 
-- the image file
-- a sidecar JSON (`*.json`) with request metadata
+## Tests / 测试
 
-## Distribution
+Run the minimal script tests / 运行最小脚本测试：
 
-Keep directory structure intact when vendoring to another repository:
+```bash
+python -m unittest scripts.test_anime_fanart
+```
 
-`anime-fanart-imagegen/`
+Covered behavior / 覆盖内容：
 
-This preserves skill import and file-path compatibility.
+- Default model remains `gpt-image-2.0` / 默认模型保持为 `gpt-image-2.0`。
+- `--dry-run` behavior / `--dry-run` 行为。
+- Size validation / 尺寸校验。
+- Lock image ordering / 锁脸图排序。
+- Prompt identity conflict detection / 提示词身份冲突检测。
+- Missing `OPENAI_API_KEY` behavior / 缺少 `OPENAI_API_KEY` 时的行为。
+
+## Metadata and Outputs / 元数据与输出
+
+English: Each successful local generation writes the image file and a sidecar JSON metadata file.
+
+中文：每次本地脚本成功生成后，会写入图片文件和一个旁路 JSON 元数据文件。
+
+Ignored local folders / 已忽略的本地目录：
+
+- `refs/`: local reference packs / 本地参考图包。
+- `output/`: generated results / 生成结果。
+- `generated_images/`: generated images / 生成图片。
+- `__pycache__/`: Python cache files / Python 缓存文件。
+
+## Distribution / 分发
+
+English: Keep this directory structure intact when vendoring or installing the skill.
+
+中文：复制或安装这个 Skill 时，请保持目录结构完整。
+
+```text
+anime-fanart-imagegen/
+```
+
+English: This preserves skill import paths, reference files, and script compatibility.
+
+中文：这样可以保持 Skill 导入路径、参考文档和脚本路径兼容。
